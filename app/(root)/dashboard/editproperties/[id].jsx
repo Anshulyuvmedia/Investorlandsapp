@@ -37,7 +37,7 @@ const Editproperty = () => {
     const [galleryImages, setGalleryImages] = useState([]);
 
     const [loading, setLoading] = useState(false);
-    const [amenity, setAmenity] = useState('');
+    const [amenity, setAmenity] = useState([]);
     const [amenities, setAmenities] = useState([]);
     const [region, setRegion] = useState({
         latitude: 20.5937,
@@ -197,24 +197,24 @@ const Editproperty = () => {
         const [day, month, year] = dateString.split("/");  // Split DD/MM/YYYY
         return `${year}-${month}-${day}`;  // Convert to YYYY-MM-DD
     };
-    
+
     const addPriceHistory = () => {
         if (selectedDate && historyPrice) {
-            const newHistoryEntry = { 
+            const newHistoryEntry = {
                 dateValue: formatDate(selectedDate),  // Convert date format
-                priceValue: historyPrice 
+                priceValue: historyPrice
             };
-    
+
             setStep2Data((prevData) => ({
                 ...prevData,
                 historydate: [...prevData.historydate, newHistoryEntry],
             }));
-    
+
             setSelectedDate('');
             setHistoryPrice('');
         }
     };
-    
+
     // Function to remove a specific price history entry
     const removePriceHistory = (index) => {
         setStep2Data((prevData) => ({
@@ -313,8 +313,6 @@ const Editproperty = () => {
             const userData = await AsyncStorage.getItem('userData');
             const userToken = await AsyncStorage.getItem('userToken');
 
-            // console.log("Logged-in userToken:", userToken);
-
             return {
                 userData: userData ? JSON.parse(userData) : null,
                 userToken: userToken ? userToken : null
@@ -353,7 +351,6 @@ const Editproperty = () => {
             formData.append("amenities", JSON.stringify(amenities));
             formData.append("historydate", step2Data?.historydate ? JSON.stringify(step2Data.historydate) : "[]");
 
-
             // ✅ Append Location Data
             formData.append("location", JSON.stringify({
                 Latitude: coordinates.latitude,
@@ -370,8 +367,6 @@ const Editproperty = () => {
                     type: `image/${fileType}`
                 });
             }
-
-
 
             // ✅ Append Gallery Images Correctly
             galleryImages.forEach((imageUri, index) => {
@@ -434,7 +429,6 @@ const Editproperty = () => {
             });
             // console.log("Uploading Master Plan Document:", masterPlanDoc);
 
-
             // ✅ Prepare File Data Object & Append
             const safeFileName = (uri, defaultExt) => {
                 return uri && uri.includes('.') ? uri.split('.').pop() : defaultExt;
@@ -448,20 +442,17 @@ const Editproperty = () => {
                 masterplandocument: masterPlanDoc.map((doc, index) => `masterplan-${index}.${safeFileName(doc.uri, "pdf")}`),
             };
             formData.append("fileData", JSON.stringify(fileData));
-
-
-
             console.log("Uploading FormData:", formData);
 
             // Send API request
             const response = await axios.post("https://investorlands.com/api/insertlisting", formData, {
                 headers: {
-                    "Content-Type": "multipart/form-data",
+                    "Content-Type": "multipart/form-data; charset=utf-8",
                     "Authorization": `Bearer ${userToken}`,
                 },
             });
 
-            console.log("API Response:", response.data);
+            // console.log("API Response:", response.data);
             if (response.status === 200 && !response.data.error) {
                 Alert.alert("Success", "Property added successfully!", [{ text: "OK" }]);
             } else {
@@ -489,47 +480,175 @@ const Editproperty = () => {
                 setStep1Data({
                     property_name: apiData.property_name || '',
                     description: apiData.discription || '',
+                    nearbylocation: apiData.nearbylocation || '',
                 });
 
                 setStep2Data({
-                    Price: apiData.price || '',
-                    squarefoot: apiData.squarefoot || '',
-                    Bathroom: apiData.bathroom || '',
-                    Floor: apiData.floor || '',
-                    City: apiData.city || '',
-                    Address: apiData.address || '',
+                    approxrentalincome: apiData.approxrentalincome || '',
+                    historydate: apiData.historydate || '',
+                    price: apiData.price || '',
                 });
 
-
-                if (apiData.gallery) {
-                    const galleryImages = JSON.parse(apiData.gallery).map(img =>
-                        img.startsWith('http') ? img : `https://investorlands.com/${img}`
-                    );
-
-                    setPropertyGallery(galleryImages);
-                    // console.log("Updated Property Gallery:", galleryImages);
-                }
-                if (apiData.videos) {
-                    const galleryVideos = JSON.parse(apiData.videos).map(video =>
-                        video.startsWith('http') ? video : `https://investorlands.com/${video}`
-                    );
-
-                    setPropertyVideos(galleryVideos);
-                    // console.log("Updated Property Video   :", propertyVideos);
-                }
-
+                setStep3Data({
+                    sqfoot: apiData.squarefoot || '',
+                    bathroom: apiData.bathroom || '',
+                    bedroom: apiData.bedroom || '',
+                    price: apiData.price || '',
+                    floor: apiData.floor || '',
+                    city: apiData.city || '',
+                    officeaddress: apiData.address || '',
+                });
 
                 setSelectedCategory(apiData.category || '');
                 setSelectedStatus(apiData.status || '');
 
+                const fetchedAmenities = apiData.amenties || apiData.amenities || [];
+
+                // Ensure it's a proper array
+                let parsedAmenities = fetchedAmenities;
+
+                if (typeof fetchedAmenities === "string") {
+                    try {
+                        parsedAmenities = JSON.parse(fetchedAmenities);
+                    } catch (error) {
+                        console.error("Error parsing amenities:", error);
+                        parsedAmenities = []; // Default to empty array
+                    }
+                }
+
+                if (Array.isArray(parsedAmenities)) {
+                    // console.log("Final Amenities from API:", parsedAmenities);
+                    setAmenities([...parsedAmenities]);
+                } else {
+                    console.error("Invalid amenities format:", parsedAmenities);
+                }
+                
+                // Extract map location and convert to numbers
+                if (apiData.maplocations) {
+                    try {
+                        const locationData = JSON.parse(apiData.maplocations);
+                        // console.log("locationData:", locationData);
+                        const latitude = parseFloat(locationData.Latitude);
+                        const longitude = parseFloat(locationData.Longitude);
+
+                        if (latitude && longitude) {
+                            // Update state
+                            setCoordinates({ latitude, longitude });
+                            setRegion({
+                                latitude,
+                                longitude,
+                                latitudeDelta: 0.015,
+                                longitudeDelta: 0.0121,
+                            });
+
+                        } else {
+                            console.error("Invalid latitude or longitude values.");
+                        }
+                    } catch (error) {
+                        console.error("Error parsing map locations:", error);
+                    }
+                }
+
+                if (apiData.gallery) {
+                    try {
+                        let galleryArray = typeof apiData.gallery === 'string' ? JSON.parse(apiData.gallery) : apiData.gallery;
+                
+                        const galleryImages = galleryArray.map(img =>
+                            img.startsWith('http') ? img : `https://investorlands.com/${img}`
+                        );
+                
+                        setGalleryImages(galleryImages);
+                    } catch (error) {
+                        console.error("Error processing gallery images:", error);
+                    }
+                }
+
+                if (apiData.videos) {
+                    try {
+                        let galleryVideos = typeof apiData.videos === 'string' ? JSON.parse(apiData.videos) : apiData.videos;
+                
+                        const videoUrls = galleryVideos.map(video =>
+                            video.startsWith('http') ? video : `https://investorlands.com/${video}`
+                        );
+                
+                        setVideos(videoUrls);
+                    } catch (error) {
+                        console.error("Error processing videos:", error);
+                    }
+                }
+
+                if (apiData.documents) {
+                    try {
+                        let propertyDocuments = typeof apiData.documents === 'string'
+                            ? JSON.parse(apiData.documents)
+                            : apiData.documents;
+                
+                        setPropertyDocuments(
+                            propertyDocuments.map(uri => ({
+                                uri: uri.startsWith('http') ? uri : `https://investorlands.com/${uri}`,
+                                name: uri.split('/').pop() || 'Unnamed Document',
+                                thumbnail: 'https://cdn-icons-png.flaticon.com/512/337/337946.png', // Default PDF icon
+                            }))
+                        );
+                    } catch (error) {
+                        console.error("Error processing documents:", error);
+                    }
+                }
+                
+
+                if (apiData.masterplandoc) {
+                    try {
+                        let masterPlanDocs = Array.isArray(apiData.masterplandoc)
+                            ? apiData.masterplandoc
+                            : [apiData.masterplandoc]; // Convert single string to array
+                
+                        setMasterPlanDoc(
+                            masterPlanDocs.map(filePath => ({
+                                uri: filePath.startsWith('http') ? filePath : `https://investorlands.com/${filePath}`,
+                                name: filePath.split('/').pop() || 'Unnamed Document',
+                                thumbnail: filePath.endsWith('.pdf')
+                                    ? 'https://cdn-icons-png.flaticon.com/512/337/337946.png'  // PDF icon for PDFs
+                                    : `https://investorlands.com/${filePath}`, // Show image preview for images
+                            }))
+                        );
+                    } catch (error) {
+                        console.error("Error processing masterplandoc:", error);
+                    }
+                }
+                
+
+                let priceHistoryData = apiData.pricehistory;
+
+                // Check if `pricehistory` is a string and parse it
+                if (typeof priceHistoryData === "string") {
+                    try {
+                        priceHistoryData = JSON.parse(priceHistoryData);
+                    } catch (error) {
+                        console.error("Error parsing pricehistory:", error);
+                    }
+                }
+
+                // Ensure it's an array before setting state
+                if (Array.isArray(priceHistoryData)) {
+                    // console.log("Valid Price History Data:", priceHistoryData);
+
+                    setStep2Data(prevData => ({
+                        ...prevData,
+                        historydate: priceHistoryData.map(item => ({
+                            dateValue: item.dateValue,
+                            priceValue: item.priceValue.toString(),
+                        })),
+                    }));
+                } else {
+                    console.error("pricehistory is still not an array after parsing:", priceHistoryData);
+                }
+
                 if (apiData.thumbnail) {
-                    setPropertyThumbnail(
+                    setMainImage(
                         apiData.thumbnail.startsWith('http')
                             ? apiData.thumbnail
                             : `https://investorlands.com/assets/images/Listings/${apiData.thumbnail}`
                     );
-                } else {
-                    setPropertyThumbnail(images.newYork);
                 }
             }
         } catch (error) {
@@ -544,45 +663,6 @@ const Editproperty = () => {
             fetchPropertyData();
         }
     }, [id]);
-
-    useEffect(() => {
-        if (propertyData) {
-            // console.log("Status from API:", propertyData.status); // Debugging line
-
-            setStep1Data({
-                property_name: propertyData.property_name || '',
-                description: propertyData.discription || '',
-            });
-
-            setStep2Data({
-                Price: propertyData.price || '',
-                squarefoot: propertyData.squarefoot || '',
-                Bathroom: propertyData.bathroom || '',
-                Floor: propertyData.floor || '',
-                City: propertyData.city || '',
-                Address: propertyData.address || '',
-            });
-
-            setSelectedCategory(propertyData.category || '');
-            setSelectedStatus(propertyData.status || ''); // Debug here
-            if (propertyData.gallery) {
-                const galleryImages = JSON.parse(propertyData.gallery).map(img =>
-                    img.startsWith('http') ? img : `https://investorlands.com/${img}`
-                );
-
-                setPropertyGallery(galleryImages);
-                // console.log("Updated Property Gallery:", galleryImages);
-            }
-            if (propertyData.videos) {
-                const galleryVideos = JSON.parse(propertyData.videos).map(video =>
-                    video.startsWith('http') ? video : `https://investorlands.com/${video}`
-                );
-
-                setPropertyVideos(galleryVideos);
-                // console.log("Updated Property Video   :", propertyVideos);
-            }
-        }
-    }, [propertyData]);
 
     if (loading) {
         return (
@@ -660,6 +740,7 @@ const Editproperty = () => {
                                 <RNPickerSelect
                                     onValueChange={(value) => setSelectedCategory(value)}
                                     items={categories}
+                                    value={selectedCategory}
                                     style={pickerSelectStyles}
                                     placeholder={{ label: 'Choose an option...', value: null }}
                                 />
@@ -798,7 +879,6 @@ const Editproperty = () => {
                             <View className='flex flex-row items-center'>
 
                                 <Text style={styles.label}>Features & Amenities</Text>
-                                <Text className='text-sm mt-3'>(Press Enter to add multiple)</Text>
                             </View>
                             <View className='flex flex-row align-center'>
                                 <View className='flex-grow'>
@@ -885,13 +965,18 @@ const Editproperty = () => {
                             </View>
 
                             <Text style={{ marginVertical: 10, fontWeight: "bold" }}>Pin Location on Map</Text>
+                            <View>
                             <MapView
-                                style={{ height: 300, borderRadius: 10 }}
+                                style={{ height: 150, borderRadius: 10 }}
                                 region={region}
+                                initialRegion={region}
                                 onPress={handleMapPress}
                             >
-                                <Marker coordinate={region} />
+                                {region && <Marker coordinate={coordinates} />}
                             </MapView>
+                            <Text>Latitude: {region.latitude}</Text>
+                            <Text>Longitude: {region.longitude}</Text>
+                        </View>
 
                         </View>
                     </ProgressStep>
@@ -920,7 +1005,7 @@ const Editproperty = () => {
                             <FlatList
                                 data={galleryImages}
                                 horizontal
-                                keyExtractor={(item, index) => index.toString()}
+                                keyExtractor={(item, index) => (item.id ? item.id.toString() : index.toString())}
                                 nestedScrollEnabled={true}
                                 contentContainerStyle={styles.fileContainer}
                                 renderItem={({ item, index }) => (
@@ -949,7 +1034,7 @@ const Editproperty = () => {
                                 <FlatList
                                     data={videos}
                                     horizontal
-                                    keyExtractor={(item) => item.id.toString()}
+                                    keyExtractor={(item, index) => (item.id ? item.id.toString() : index.toString())}
                                     nestedScrollEnabled={true}
                                     contentContainerStyle={styles.fileContainer}
                                     renderItem={({ item, index }) => (

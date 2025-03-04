@@ -692,7 +692,6 @@ const Addproperty = () => {
                             <View className='flex flex-row items-center'>
 
                                 <Text style={styles.label}>Features & Amenities</Text>
-                                <Text className='text-sm mt-3'>(Press Enter to add multiple)</Text>
                             </View>
                             <View className='flex flex-row align-center'>
                                 <View className='flex-grow'>
