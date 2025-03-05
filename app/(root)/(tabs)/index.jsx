@@ -10,6 +10,7 @@ import { Link, useRouter } from 'expo-router';
 import { Colors } from '@/constants/Colors';
 import AsyncStorage from '@react-native-async-storage/async-storage';
 import axios from 'axios';
+import * as Location from 'expo-location';
 // import { useNavigation } from "expo-router"; 
 import { useNavigation } from "@react-navigation/native";
 
@@ -21,7 +22,17 @@ const Index = () => {
     const [image, setImage] = useState(images.avatar); // Default avatar
     const [listingData, setListingData] = useState(); // Default avatar
     const navigation = useNavigation();
-    
+
+
+    const requestLocationPermission = async () => {
+        const { status } = await Location.requestForegroundPermissionsAsync();
+        if (status !== 'granted') {
+            Alert.alert('Permission Denied', 'Location permission is required to show the map.');
+            return;
+        }
+        // Fetch user location if needed
+    };
+
     const fetchUserData = async () => {
         setLoading(true);
         try {
@@ -83,7 +94,7 @@ const Index = () => {
         }
     }
     useEffect(() => {
-
+        requestLocationPermission();
         fetchUserData();
         fetchListingData();
     }, []);
@@ -113,7 +124,7 @@ const Index = () => {
                                     </Text>
                                 </View>
                             </TouchableOpacity>
-                            
+
                             <TouchableOpacity onPress={() => router.push('/notifications')}>
                                 <Image source={icons.bell} className='size-6' />
                             </TouchableOpacity>

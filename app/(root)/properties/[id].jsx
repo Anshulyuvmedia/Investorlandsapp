@@ -9,11 +9,11 @@ import Videobox from "../../../components/Videobox";
 import AsyncStorage from '@react-native-async-storage/async-storage';
 import MapView, { Marker } from "react-native-maps";
 import 'react-native-get-random-values';
-import * as Location from "expo-location";
 import { useNavigation } from "@react-navigation/native";
 import MasterPlanList from "@/components/MasterPlanList";
 import PriceHistoryChart from "@/components/PriceHistoryChart";
 import MortgageCalculator from "@/components/MortgageCalculator";
+import * as Linking from 'expo-linking';
 
 const PropertyDetails = () => {
     const [propertyId, setPropertyId] = useState(useLocalSearchParams().id);
@@ -50,26 +50,6 @@ const PropertyDetails = () => {
         Linking.openURL(pdfUrl);
     };
 
-    const getAddressFromCoordinates = async (latitude, longitude) => {
-        try {
-            let { status } = await Location.requestForegroundPermissionsAsync();
-            if (status !== "granted") {
-                Alert.alert("Permission Denied", "Allow location access in settings.");
-                return;
-            }
-            // console.log("location:", latitude, longitude);
-
-            let location = await Location.reverseGeocodeAsync({ latitude, longitude });
-            // console.log("location:", location);
-
-            if (location.length > 0) {
-                const { name, street, city, region, country, postalCode } = location[0];
-                setAddress(`${name || street}, ${city}, ${region}, ${country} - ${postalCode}`);
-            }
-        } catch (error) {
-            console.error("Error fetching address:", error);
-        }
-    };
 
     const handleEnquiry = async () => {
         try {
@@ -200,7 +180,6 @@ const PropertyDetails = () => {
                 }
                 setPriceHistory(priceHistory);
 
-
                 if (apiData.maplocations) {
                     try {
                         const locationData = JSON.parse(apiData.maplocations);
@@ -217,9 +196,6 @@ const PropertyDetails = () => {
                                 longitudeDelta: 0.0121,
                             });
                             // console.log("location:",region);
-
-                            // Fetch address from coordinates
-                            getAddressFromCoordinates(latitude, longitude);
                         }
                     } catch (error) {
                         console.error("Error parsing map locations:", error);
@@ -272,7 +248,6 @@ const PropertyDetails = () => {
 
 
     useEffect(() => {
-
         fetchPropertyData();
     }, [propertyId])
 
@@ -533,13 +508,16 @@ const PropertyDetails = () => {
                             </MapView>
 
                             {/* 🔹 Show the Address Below the Map */}
-                            {address ? (
-                                <Text className="text-center text-black-500 mt-2 font-bold">
-                                    📍 {address}
+                            <TouchableOpacity
+                                onPress={() => Linking.openURL(`https://www.google.com/maps/search/?api=1&query=${coordinates.latitude},${coordinates.longitude}`)}
+                            >
+                                <Text className='text-black-300 text-center font-rubik-medium mt-2 bg-blue-100 flex-grow p-2 rounded-full'>
+                                    View Location
                                 </Text>
-                            ) : (
-                                <Text className="text-center text-gray-500 mt-2">Fetching address...</Text>
-                            )}
+                            </TouchableOpacity>
+
+
+
                         </View>
 
                     </View>

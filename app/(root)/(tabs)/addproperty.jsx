@@ -779,7 +779,7 @@ const Addproperty = () => {
 
                             <Text style={{ marginVertical: 10, fontWeight: "bold" }}>Pin Location on Map</Text>
                             <MapView
-                                style={{ height: 300, borderRadius: 10 }}
+                                style={{ height: 150, borderRadius: 10 }}
                                 region={region}
                                 onPress={handleMapPress}
                             >

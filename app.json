@@ -14,21 +14,29 @@
       "supportsTablet": true,
       "bundleIdentifier": "com.investor.investorland",
       "associatedDomains": [
+        "applinks:your-server.com",
         "applinks:your-server.com"
-      ]
+      ],
+      "runtimeVersion": {
+        "policy": "appVersion"
+      }
     },
     "android": {
+      "package": "com.investor.investorland",
+      "permissions": [
+        "ACCESS_FINE_LOCATION",
+        "ACCESS_COARSE_LOCATION"
+      ],
       "adaptiveIcon": {
-        "foregroundImage": "./assets/images/icon.jpeg",
-        "backgroundColor": "#ffffff",
-        "package": "com.investor.investorland"
+        "foregroundImage": "./assets/images/investorIcon.png",
+        "backgroundColor": "#ffffff"
       },
-      "package": "com.investor.investorland"
+      "runtimeVersion": "1.0.0"
     },
     "web": {
       "bundler": "metro",
       "output": "static",
-      "favicon": "./assets/images/icon.jpeg"
+      "favicon": "./assets/images/investorIcon.png"
     },
     "platforms": [
       "ios",
@@ -77,8 +85,13 @@
       "eas": {
         "projectId": "b9b062d0-380c-4ab0-8b80-cb450a9dc58a"
       },
-      "GOOGLE_MAPS_API_KEY": "AIzaSyA_KLtDmYZB0Qy_b0f6LHJSlDV2wYYPf8s"
+      "GOOGLE_MAPS_API_KEY": "AIzaSyA_KLtDmYZB0Qy_b0f6LHJSlDV2wYYPf8s",
+      "ANDROID_CLIENT_ID": "674185229942-hkqcgtqbjja7gh5ilnb1t8ed7t1pu72t.apps.googleusercontent.com",
+      "WEB_CLIENT_ID": "674185229942-u0ueij6dphapn8a8bacgtnmm1omoricq.apps.googleusercontent.com"
     },
-    "owner": "anshulyuvmedia"
+    "owner": "anshulyuvmedia",
+    "updates": {
+      "url": "https://u.expo.dev/b9b062d0-380c-4ab0-8b80-cb450a9dc58a"
+    }
   }
 }
