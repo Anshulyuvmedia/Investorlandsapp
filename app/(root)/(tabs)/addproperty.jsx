@@ -28,7 +28,7 @@ const Addproperty = () => {
 
     const [errors, setErrors] = useState(false);
     const [selectedCategory, setSelectedCategory] = useState(null);
-    const [selectedStatus, setSelectedStatus] = useState("Unpublished");
+    const [selectedStatus, setSelectedStatus] = useState("unpublished");
     const [mainImage, setMainImage] = useState(null);
 
     const [videos, setVideos] = useState([]);
@@ -73,8 +73,8 @@ const Addproperty = () => {
         { label: 'Bunglow', value: 'Bunglow' },
     ];
     const status = [
-        { label: 'Unpublished', value: 'Unpublished' },
-        { label: 'Published', value: 'Published' },
+        { label: 'Unpublished', value: 'unpublished' },
+        { label: 'Published', value: 'published' },
     ];
 
     const validateStep = (step) => {
@@ -440,7 +440,7 @@ const Addproperty = () => {
                 masterplandocument: masterPlanDoc.map((doc, index) => `masterplan-${index}.${safeFileName(doc.uri, "pdf")}`),
             };
             formData.append("fileData", JSON.stringify(fileData));
-            // console.log("Uploading FormData:", formData);
+            console.log("Uploading FormData add property:", formData);
 
             // Send API request
             const response = await axios.post("https://investorlands.com/api/insertlisting", formData, {
@@ -487,7 +487,7 @@ const Addproperty = () => {
         setStep2Data({ historydate: [] });
 
         setSelectedCategory(null);
-        setSelectedStatus("Unpublished");
+        setSelectedStatus("unpublished");
         setMainImage(null);
         setGalleryImages([]);
         setPropertyDocuments([]);

@@ -30,7 +30,7 @@ const Editproperty = () => {
 
     const [errors, setErrors] = useState(false);
     const [selectedCategory, setSelectedCategory] = useState(null);
-    const [selectedStatus, setSelectedStatus] = useState("Unpublished");
+    const [selectedStatus, setSelectedStatus] = useState("unpublished");
     const [mainImage, setMainImage] = useState(null);
 
     const [videos, setVideos] = useState([]);
@@ -75,8 +75,8 @@ const Editproperty = () => {
         { label: 'Bunglow', value: 'Bunglow' },
     ];
     const status = [
-        { label: 'Unpublished', value: 'Unpublished' },
-        { label: 'Published', value: 'Published' },
+        { label: 'Unpublished', value: 'unpublished' },
+        { label: 'Published', value: 'published' },
     ];
 
     const validateStep = (step) => {
@@ -331,17 +331,20 @@ const Editproperty = () => {
             if (!userData || !userToken) {
                 throw new Error("User is not authenticated. Token missing.");
             }
-
+            const propertyId = propertyData?.id ?? id; // Ensure property ID is used
             const { id, user_type } = userData;
-
+    
             const formData = new FormData();
-            // ✅ Append Step 1 Data
-            Object.entries(step1Data).forEach(([key, value]) => { formData.append(key, value); });
-            // ✅ Append Step 2 Data
-            Object.entries(step2Data).forEach(([key, value]) => { formData.append(key, value); });
-            // ✅ Append Step 3 Data
-            Object.entries(step3Data).forEach(([key, value]) => { formData.append(key, value); });
-
+            
+            // ✅ Append Step 1, 2, and 3 Data
+            [step1Data, step2Data, step3Data].forEach(data => {
+                Object.entries(data).forEach(([key, value]) => {
+                    if (value !== null && value !== undefined) {
+                        formData.append(key, value);
+                    }
+                });
+            });
+    
             // ✅ Append additional fields
             formData.append("bedroom", step3Data?.bedroom ?? "");
             formData.append("category", selectedCategory ?? "");
@@ -350,45 +353,39 @@ const Editproperty = () => {
             formData.append("usertype", user_type ?? "");
             formData.append("amenities", JSON.stringify(amenities));
             formData.append("historydate", step2Data?.historydate ? JSON.stringify(step2Data.historydate) : "[]");
-
+    
             // ✅ Append Location Data
             formData.append("location", JSON.stringify({
                 Latitude: coordinates.latitude,
                 Longitude: coordinates.longitude,
             }));
-
-            let thumbnailFileName = '';
-            if (mainImage) {
-                const fileType = mainImage?.includes('.') ? mainImage.split('.').pop() : "jpg";  // Ensure there's an extension
-                thumbnailFileName = `mainImage-thumbnail.${fileType}`;
+    
+            // ✅ Append Thumbnail Image
+            if (mainImage && !mainImage.startsWith("http")) {
+                const fileType = mainImage.split('.').pop();
                 formData.append("thumbnailImages", {
                     uri: mainImage,
-                    name: thumbnailFileName,
-                    type: `image/${fileType}`
+                    name: `thumbnail.${fileType}`,
+                    type: `image/${fileType}`,
                 });
             }
-
-            // ✅ Append Gallery Images Correctly
+    
+            // ✅ Append Gallery Images
             galleryImages.forEach((imageUri, index) => {
-                if (imageUri) { // Directly check string
-                    const fileType = imageUri.includes('.') ? imageUri.split('.').pop() : "jpeg";
-
+                if (!imageUri.startsWith("http")) {
+                    const fileType = imageUri.split('.').pop();
                     formData.append(`galleryImages[${index}]`, {
-                        uri: imageUri, // ✅ Corrected
+                        uri: imageUri,
                         type: `image/${fileType}`,
-                        name: `gallery-image-${index}.${fileType}`,
+                        name: `gallery-${index}.${fileType}`,
                     });
-                } else {
-                    console.warn("Skipping image due to missing URI.");
                 }
             });
-
-            // console.log("Uploading galleryImages", galleryImages);
-
-            // ✅ Append Videos as a Comma-Separated String
+    
+            // ✅ Append Videos
             videos.forEach((video, index) => {
-                if (video?.uri) {  // Check if video.uri exists
-                    const fileType = video.uri.includes('.') ? video.uri.split('.').pop() : "mp4";
+                if (video?.uri && !video.uri.startsWith("http")) {
+                    const fileType = video.uri.split('.').pop();
                     formData.append(`propertyvideos[${index}]`, {
                         uri: video.uri,
                         type: video.type || `video/${fileType}`,
@@ -396,30 +393,23 @@ const Editproperty = () => {
                     });
                 }
             });
-            // console.log("Uploading videos", videos);
-
-            // ✅ Append Documents as a Comma-Separated String
+    
+            // ✅ Append Documents
             propertyDocuments.forEach((doc, index) => {
-                if (doc?.uri) {  // Check if doc.uri exists
-                    const fileType = doc.uri.includes('.') ? doc.uri.split('.').pop() : "pdf";
+                if (doc?.uri && !doc.uri.startsWith("http")) {
+                    const fileType = doc.uri.split('.').pop();
                     formData.append(`documents[${index}]`, {
                         uri: doc.uri,
-                        type: doc.type || `application/${fileType}`,
+                        type: `application/${fileType}`,
                         name: `document-${index}.${fileType}`,
                     });
                 }
             });
-
+    
+            // ✅ Append Master Plan Document
             masterPlanDoc.forEach((doc, index) => {
-                if (doc?.uri) {  // Ensure the document has a valid URI
+                if (doc?.uri && !doc.uri.startsWith("http")) {
                     const fileType = doc.uri.split('.').pop()?.toLowerCase() || "pdf";
-                    const validFileTypes = ["pdf", "jpeg", "jpg"];
-
-                    if (!validFileTypes.includes(fileType)) {
-                        console.warn(`Invalid file type detected: ${fileType}`);
-                        return;
-                    }
-
                     formData.append("masterplandocument", {
                         uri: doc.uri,
                         type: fileType === "pdf" ? "application/pdf" : `image/${fileType}`,
@@ -427,44 +417,42 @@ const Editproperty = () => {
                     });
                 }
             });
-            // console.log("Uploading Master Plan Document:", masterPlanDoc);
-
-            // ✅ Prepare File Data Object & Append
-            const safeFileName = (uri, defaultExt) => {
-                return uri && uri.includes('.') ? uri.split('.').pop() : defaultExt;
-            };
-
+    
+            // ✅ File Data Object for Reference
             const fileData = {
-                galleryImages: galleryImages.map((image, index) => `gallery-image-${index}.${safeFileName(image.uri, "jpg")}`),
-                propertyvideos: videos.map((video, index) => `video-${index}.${safeFileName(video.uri, "mp4")}`),
-                thumbnailImages: thumbnailFileName ? [thumbnailFileName] : [],
-                documents: propertyDocuments.map((doc, index) => `document-${index}.${safeFileName(doc.uri, "pdf")}`),
-                masterplandocument: masterPlanDoc.map((doc, index) => `masterplan-${index}.${safeFileName(doc.uri, "pdf")}`),
+                galleryImages: galleryImages.filter(img => !img.startsWith("http")),
+                propertyvideos: videos.filter(vid => vid.uri && !vid.uri.startsWith("http")),
+                thumbnailImages: mainImage && !mainImage.startsWith("http") ? [mainImage] : [],
+                documents: propertyDocuments.filter(doc => doc.uri && !doc.uri.startsWith("http")),
+                masterplandocument: masterPlanDoc.filter(doc => doc.uri && !doc.uri.startsWith("http")),
             };
             formData.append("fileData", JSON.stringify(fileData));
-            console.log("Uploading FormData:", formData);
-
-            // Send API request
-            const response = await axios.post("https://investorlands.com/api/insertlisting", formData, {
+            
+            // console.log("Uploading FormData:", formData);
+    
+            // ✅ Send API Request
+            const response = await axios.post(`https://investorlands.com/api/updatelisting/${propertyId}`, formData, {
                 headers: {
+                    "Accept": "application/json",
                     "Content-Type": "multipart/form-data; charset=utf-8",
-                    "Authorization": `Bearer ${userToken}`,
+                    "Authorization": `Bearer ${userToken}`
                 },
             });
-
-            // console.log("API Response:", response.data);
+    
+            console.log("API Response:", response.data);
             if (response.status === 200 && !response.data.error) {
-                Alert.alert("Success", "Property added successfully!", [{ text: "OK" }]);
+                Alert.alert("Success", "Property updated successfully!", [{ text: "OK" }]);
             } else {
-                Alert.alert("Error", response.data.message || "Failed to add property.");
+                Alert.alert("Error", response.data.message || "Failed to update property.");
             }
         } catch (error) {
-            console.error("API Error:", error?.response?.data || error);
-            Alert.alert("Error", "Something went wrong. Please try again.");
+            console.error("Error in update property:", error);
+            Alert.alert("Error", "Failed to update property. Please try again.");
         } finally {
             setLoading(false);
         }
     };
+    
 
 
     // Fetch Property Data
@@ -493,7 +481,6 @@ const Editproperty = () => {
                     sqfoot: apiData.squarefoot || '',
                     bathroom: apiData.bathroom || '',
                     bedroom: apiData.bedroom || '',
-                    price: apiData.price || '',
                     floor: apiData.floor || '',
                     city: apiData.city || '',
                     officeaddress: apiData.address || '',
@@ -522,7 +509,7 @@ const Editproperty = () => {
                 } else {
                     console.error("Invalid amenities format:", parsedAmenities);
                 }
-                
+
                 // Extract map location and convert to numbers
                 if (apiData.maplocations) {
                     try {
@@ -552,11 +539,11 @@ const Editproperty = () => {
                 if (apiData.gallery) {
                     try {
                         let galleryArray = typeof apiData.gallery === 'string' ? JSON.parse(apiData.gallery) : apiData.gallery;
-                
+
                         const galleryImages = galleryArray.map(img =>
                             img.startsWith('http') ? img : `https://investorlands.com/${img}`
                         );
-                
+
                         setGalleryImages(galleryImages);
                     } catch (error) {
                         console.error("Error processing gallery images:", error);
@@ -566,11 +553,11 @@ const Editproperty = () => {
                 if (apiData.videos) {
                     try {
                         let galleryVideos = typeof apiData.videos === 'string' ? JSON.parse(apiData.videos) : apiData.videos;
-                
+
                         const videoUrls = galleryVideos.map(video =>
                             video.startsWith('http') ? video : `https://investorlands.com/${video}`
                         );
-                
+
                         setVideos(videoUrls);
                     } catch (error) {
                         console.error("Error processing videos:", error);
@@ -582,7 +569,7 @@ const Editproperty = () => {
                         let propertyDocuments = typeof apiData.documents === 'string'
                             ? JSON.parse(apiData.documents)
                             : apiData.documents;
-                
+
                         setPropertyDocuments(
                             propertyDocuments.map(uri => ({
                                 uri: uri.startsWith('http') ? uri : `https://investorlands.com/${uri}`,
@@ -594,14 +581,14 @@ const Editproperty = () => {
                         console.error("Error processing documents:", error);
                     }
                 }
-                
+
 
                 if (apiData.masterplandoc) {
                     try {
                         let masterPlanDocs = Array.isArray(apiData.masterplandoc)
                             ? apiData.masterplandoc
                             : [apiData.masterplandoc]; // Convert single string to array
-                
+
                         setMasterPlanDoc(
                             masterPlanDocs.map(filePath => ({
                                 uri: filePath.startsWith('http') ? filePath : `https://investorlands.com/${filePath}`,
@@ -615,7 +602,6 @@ const Editproperty = () => {
                         console.error("Error processing masterplandoc:", error);
                     }
                 }
-                
 
                 let priceHistoryData = apiData.pricehistory;
 
@@ -966,17 +952,17 @@ const Editproperty = () => {
 
                             <Text style={{ marginVertical: 10, fontWeight: "bold" }}>Pin Location on Map</Text>
                             <View>
-                            <MapView
-                                style={{ height: 150, borderRadius: 10 }}
-                                region={region}
-                                initialRegion={region}
-                                onPress={handleMapPress}
-                            >
-                                {region && <Marker coordinate={coordinates} />}
-                            </MapView>
-                            <Text>Latitude: {region.latitude}</Text>
-                            <Text>Longitude: {region.longitude}</Text>
-                        </View>
+                                <MapView
+                                    style={{ height: 150, borderRadius: 10 }}
+                                    region={region}
+                                    initialRegion={region}
+                                    onPress={handleMapPress}
+                                >
+                                    {region && <Marker coordinate={coordinates} />}
+                                </MapView>
+                                <Text>Latitude: {region.latitude}</Text>
+                                <Text>Longitude: {region.longitude}</Text>
+                            </View>
 
                         </View>
                     </ProgressStep>
@@ -1133,7 +1119,7 @@ const styles = StyleSheet.create({
     container: {
         flex: 1,
         padding: 0,
-        paddingBottom: 40,
+        paddingBottom: 0,
         backgroundColor: '#fff',
     },
     stepContent: {

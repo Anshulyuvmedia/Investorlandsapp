@@ -32,12 +32,14 @@ const Myproperties = () => {
             price: item.price,
             status: item.status,
             category: item.category,
-            thumbnail: item.thumbnail.startsWith('http')
+            thumbnail: item.thumbnail && typeof item.thumbnail === 'string' && item.thumbnail.startsWith('http')
               ? item.thumbnail
-              : `https://investorlands.com/assets/images/Listings/${item.thumbnail}`,
+              : item.thumbnail
+              ? `https://investorlands.com/assets/images/Listings/${item.thumbnail}`
+              : 'https://investorlands.com/assets/images/default-thumbnail.jpg', // Fallback default image
             city: item.city, // Limit to 10 words
           }));
-
+        
           setUserPropertyData(formattedData);
         } else {
           console.error('Unexpected API response format:', response.data);
