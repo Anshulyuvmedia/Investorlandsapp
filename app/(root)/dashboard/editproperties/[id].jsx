@@ -1,4 +1,4 @@
-import { Image, StyleSheet, Text, TouchableOpacity, View, TextInput, FlatList, Alert, Platform, ScrollView, Button, ActivityIndicator } from 'react-native';
+import { Image, StyleSheet, Text, TouchableOpacity, View, TextInput, FlatList, Alert, Platform, ActivityIndicator } from 'react-native';
 import React, { useState, useEffect } from 'react';
 import { SafeAreaView } from 'react-native-safe-area-context';
 import icons from '@/constants/icons';
@@ -14,6 +14,7 @@ import { GooglePlacesAutocomplete } from "react-native-google-places-autocomplet
 import Constants from "expo-constants";
 import 'react-native-get-random-values';
 import DateTimePicker from '@react-native-community/datetimepicker';
+import { ScrollView } from 'react-native-virtualized-view';
 
 const Editproperty = () => {
     const { id } = useLocalSearchParams();
