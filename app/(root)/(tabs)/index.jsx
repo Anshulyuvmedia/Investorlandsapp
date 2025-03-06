@@ -10,7 +10,7 @@ import { Link, useRouter } from 'expo-router';
 import { Colors } from '@/constants/Colors';
 import AsyncStorage from '@react-native-async-storage/async-storage';
 import axios from 'axios';
-import * as Location from 'expo-location';
+// import * as Location from 'expo-location';
 // import { useNavigation } from "expo-router"; 
 import { useNavigation } from "@react-navigation/native";
 
@@ -24,14 +24,17 @@ const Index = () => {
     const navigation = useNavigation();
 
 
-    const requestLocationPermission = async () => {
-        const { status } = await Location.requestForegroundPermissionsAsync();
-        if (status !== 'granted') {
-            Alert.alert('Permission Denied', 'Location permission is required to show the map.');
-            return;
-        }
-        // Fetch user location if needed
-    };
+    // const requestLocationPermission = async () => {
+    //     const { status } = await Location.requestForegroundPermissionsAsync();
+
+    //     if (status !== 'granted') {
+    //         Alert.alert('Permission Denied', 'Location permission is required to show the map.');
+    //         return false; // Return false if permission is denied
+    //     }
+
+    //     return true; // Return true if permission is granted
+    // };
+
 
     const fetchUserData = async () => {
         setLoading(true);
@@ -93,8 +96,32 @@ const Index = () => {
             setLoading(false);
         }
     }
+
+    // useEffect(() => {
+    //     (async () => {
+    //         const hasPermission = await requestLocationPermission();
+    //         if (hasPermission) {
+    //             getLocation(); // Call the function instead of writing logic directly inside useEffect
+    //         }
+    //     })();
+    // }, []);
+    
+    // Define the getLocation function
+    // const getLocation = async () => {
+    //     try {
+    //         const location = await Location.getCurrentPositionAsync({
+    //             accuracy: Location.Accuracy.High,
+    //             timeout: 5000, // Prevents infinite hang
+    //         });
+
+    //         console.log("User Location:", location);
+    //     } catch (error) {
+    //         console.error("Location fetch failed, using fallback:", error);
+    //         // You can set a default location or show an alert here
+    //     }
+    // };
+
     useEffect(() => {
-        requestLocationPermission();
         fetchUserData();
         fetchListingData();
     }, []);

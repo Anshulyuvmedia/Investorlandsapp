@@ -616,18 +616,18 @@ const Editproperty = () => {
 
                 // Ensure it's an array before setting state
                 if (Array.isArray(priceHistoryData)) {
-                    // console.log("Valid Price History Data:", priceHistoryData);
-
                     setStep2Data(prevData => ({
                         ...prevData,
                         historydate: priceHistoryData.map(item => ({
                             dateValue: item.dateValue,
                             priceValue: item.priceValue.toString(),
-                        })),
+                        })), // This replaces old data instead of appending
                     }));
                 } else {
-                    console.error("pricehistory is still not an array after parsing:", priceHistoryData);
+                    console.error("priceHistoryData is not an array:", priceHistoryData);
                 }
+                
+                
 
                 if (apiData.thumbnail) {
                     setMainImage(

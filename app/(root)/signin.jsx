@@ -18,8 +18,9 @@ import images from '@/constants/images';
 import icons from '@/constants/icons';
 import * as WebBrowser from "expo-web-browser";
 import * as Google from 'expo-auth-session/providers/google';
-import { makeRedirectUri } from 'expo-auth-session';
+import * as AuthSession from 'expo-auth-session';
 import Constants from "expo-constants";
+import * as SecureStore from 'expo-secure-store';
 
 WebBrowser.maybeCompleteAuthSession();
 
@@ -27,21 +28,25 @@ const Signin = () => {
   const [email, setEmail] = useState('');
   const [password, setPassword] = useState('');
   const [loading, setLoading] = useState(false);
-  const [userInfo, setUserInfo] = useState(null);
   const router = useRouter();
+  const [userInfo, setUserInfo] = useState(null);
   const ANDROID_CLIENT_ID = Constants.expoConfig.extra.ANDROID_CLIENT_ID;
   const WEB_CLIENT_ID = Constants.expoConfig.extra.WEB_CLIENT_ID;
+  const IOS_CLIENT_ID = Constants.expoConfig.extra.IOS_CLIENT_ID;
+  const EXPO_CLIENT_ID = Constants.expoConfig.extra.EXPO_CLIENT_ID;
 
   // Google Auth Request
   const [request, response, promptAsync] = Google.useAuthRequest({
+    clientId: WEB_CLIENT_ID,
+    iosClientId: IOS_CLIENT_ID,
     androidClientId: ANDROID_CLIENT_ID,
-    webClientId: WEB_CLIENT_ID,
-    scopes: ['profile', 'email'],
-    redirectUri: makeRedirectUri({ scheme: 'investorland' }),  // Ensure this matches the console
+    expoClientId: EXPO_CLIENT_ID,
+    redirectUri: AuthSession.makeRedirectUri({ useProxy: true }),  // FIX HERE
   });
   
 
-  // Email Login Function
+  // console.log("ANDROID_CLIENT_ID", ANDROID_CLIENT_ID);
+  // Handle Email Login
   const emaillogin = async () => {
     if (!email || !password) {
       Alert.alert('Validation Error', 'Please enter both email and password.');
@@ -74,42 +79,26 @@ const Signin = () => {
     }
   };
 
-  // Google Sign-In Function
-  const handleGoogleAuth = async (token) => {
-    if (!token) return;
-    setLoading(true);
+  // Fetch user details from Google API
+  const getUserInfo = async (token) => {
     try {
-      const res = await fetch('https://investorlands.com/api/appGoogleAuth', {
-        method: 'POST',
-        headers: { 'Content-Type': 'application/json' },
-        body: JSON.stringify({ token }),
+      const res = await fetch("https://www.googleapis.com/userinfo/v2/me", {
+        headers: { Authorization: `Bearer ${token}` },
       });
-
-      const data = await res.json();
-
-      if (res.ok && data.success) {
-        await AsyncStorage.setItem('userToken', data.token);
-        await AsyncStorage.setItem('userData', JSON.stringify(data.data));
-        Alert.alert('Success', `Welcome ${data.data.name}`);
-        router.push('/');
-      } else {
-        Alert.alert('Google Login Failed', data.message || 'Unable to authenticate');
-      }
+      const user = await res.json();
+      setUserInfo(user);
+      await SecureStore.setItemAsync("user", JSON.stringify(user)); // Store user info securely
     } catch (error) {
-      console.error('Google Auth Error:', error);
-      Alert.alert('Error', 'An unexpected error occurred');
-    } finally {
-      setLoading(false);
+      console.error("Error fetching user info:", error);
     }
   };
 
-  // Handle Google Sign-In
+  // Handle Google Sign-In Response
   useEffect(() => {
     if (response?.type === "success") {
-      handleGoogleAuth(response.authentication.accessToken);
+      getUserInfo(response.authentication.accessToken);
     }
   }, [response]);
-
 
   return (
     <SafeAreaView style={styles.container}>
@@ -151,14 +140,14 @@ const Signin = () => {
             <Text style={styles.forgotPassword}>Forgot password?</Text>
           </TouchableOpacity>
 
-          {/* <Text style={styles.orText}>Or with</Text>
+          <Text style={styles.orText}>Or with</Text>
 
-          <TouchableOpacity onPress={() => promptAsync()} style={styles.googleButton}>
+          <TouchableOpacity onPress={() => promptAsync()} style={styles.googleButton} disabled={!request}>
             <View style={styles.googleContent}>
               <Image source={icons.google} style={styles.googleIcon} resizeMode="contain" />
               <Text style={styles.googleText}>Continue with Google</Text>
             </View>
-          </TouchableOpacity> */}
+          </TouchableOpacity>
 
           <Link href="/signup" style={styles.registerLink}>
             <Text style={styles.registerText}>

@@ -191,6 +191,7 @@ const Signup = () => {
               <Text style={styles.googleText}>Register with Google</Text>
             </View>
           </TouchableOpacity>
+
           <Link href="/signin" style={{ marginTop: 20, alignItems: 'center' }}>
             <Text
               style={{
@@ -235,6 +236,7 @@ const styles = StyleSheet.create({
   downloadText: {
     color: '#8a4c00',
   },
+  highlight: { color: '#854d0e' },
   orText: { fontSize: 14, fontFamily: 'Rubik-Regular', color: '#555', textAlign: 'center', marginTop: 30 },
   googleButton: { backgroundColor: 'lightgrey', borderRadius: 50, paddingVertical: 15, marginTop: 20, alignItems: 'center', width: '100%' },
   googleContent: { flexDirection: 'row', alignItems: 'center' },

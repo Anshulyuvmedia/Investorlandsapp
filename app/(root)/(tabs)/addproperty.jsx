@@ -1,4 +1,4 @@
-import { Image, StyleSheet, Text, TouchableOpacity, View, TextInput, FlatList, Alert, Platform, ScrollView, Button, ActivityIndicator } from 'react-native';
+import { Image, StyleSheet, Text, TouchableOpacity, View, TextInput, KeyboardAvoidingView, FlatList, Alert, Platform, ScrollView, Button, ActivityIndicator } from 'react-native';
 import React, { useState } from 'react';
 import { SafeAreaView } from 'react-native-safe-area-context';
 import icons from '@/constants/icons';
@@ -11,6 +11,7 @@ import axios from 'axios';
 import AsyncStorage from '@react-native-async-storage/async-storage';
 import MapView, { Marker } from "react-native-maps";
 import { GooglePlacesAutocomplete } from "react-native-google-places-autocomplete";
+// import { GooglePlacesAutocomplete } from "expo-google-places-autocomplete";
 import Constants from "expo-constants";
 import 'react-native-get-random-values';
 import DateTimePicker from '@react-native-community/datetimepicker';
@@ -44,9 +45,10 @@ const Addproperty = () => {
         longitudeDelta: 0.0121,
     });
     const [coordinates, setCoordinates] = useState({
-        latitude: "",
-        longitude: "",
+        latitude: 20.5937, // Default to India's coordinates
+        longitude: 78.9629,
     });
+
     const [show, setShow] = useState(false);
     const [selectedDate, setSelectedDate] = useState('');
     const [historyPrice, setHistoryPrice] = useState('');
@@ -195,24 +197,24 @@ const Addproperty = () => {
         const [day, month, year] = dateString.split("/");  // Split DD/MM/YYYY
         return `${year}-${month}-${day}`;  // Convert to YYYY-MM-DD
     };
-    
+
     const addPriceHistory = () => {
         if (selectedDate && historyPrice) {
-            const newHistoryEntry = { 
+            const newHistoryEntry = {
                 dateValue: formatDate(selectedDate),  // Convert date format
-                priceValue: historyPrice 
+                priceValue: historyPrice
             };
-    
+
             setStep2Data((prevData) => ({
                 ...prevData,
                 historydate: [...prevData.historydate, newHistoryEntry],
             }));
-    
+
             setSelectedDate('');
             setHistoryPrice('');
         }
     };
-    
+
     // Function to remove a specific price history entry
     const removePriceHistory = (index) => {
         setStep2Data((prevData) => ({
@@ -273,36 +275,35 @@ const Addproperty = () => {
     const handlePlaceSelect = (data, details = null) => {
         if (details?.geometry?.location) {
             const { lat, lng } = details.geometry.location;
+
             setRegion({
-                latitude: lat,
-                longitude: lng,
+                latitude: Number(lat),  // Ensure it's a number
+                longitude: Number(lng),
                 latitudeDelta: 0.015,
                 longitudeDelta: 0.0121,
             });
 
-            // Store selected coordinates
             setCoordinates({
-                latitude: lat?.toString() ?? "",
-                longitude: lng?.toString() ?? "",
+                latitude: Number(lat),  // Store as number
+                longitude: Number(lng),
             });
-
         }
     };
 
     // Function to handle manual selection on the map
     const handleMapPress = (e) => {
         const { latitude, longitude } = e.nativeEvent.coordinate;
+
         setRegion({
-            latitude,
-            longitude,
+            latitude: Number(latitude),
+            longitude: Number(longitude),
             latitudeDelta: 0.015,
             longitudeDelta: 0.0121,
         });
 
-        // Store manual coordinates
         setCoordinates({
-            latitude: latitude.toString(),
-            longitude: longitude.toString(),
+            latitude: Number(latitude),
+            longitude: Number(longitude),
         });
     };
 
@@ -685,12 +686,10 @@ const Addproperty = () => {
                     // onNext={() => onNextStep(3)}
                     // errors={errors}
                     >
-
                         <View style={styles.stepContent}>
 
                             {/* enter amenities */}
                             <View className='flex flex-row items-center'>
-
                                 <Text style={styles.label}>Features & Amenities</Text>
                             </View>
                             <View className='flex flex-row align-center'>
@@ -742,7 +741,6 @@ const Addproperty = () => {
                                     <TextInput style={styles.input} placeholder="bedrooms" keyboardType="numeric" value={step3Data.bedroom} onChangeText={text => setStep3Data({ ...step3Data, bedroom: text })} />
                                 </View>
                             </View>
-
                             <View style={{ flexDirection: 'row', justifyContent: 'space-between' }}>
                                 {/* enter number of floors */}
                                 <View style={{ flex: 1, marginRight: 5 }}>
@@ -762,20 +760,26 @@ const Addproperty = () => {
                             <TextInput style={styles.textarea} placeholder="Property Address" value={step3Data.officeaddress} onChangeText={text => setStep3Data({ ...step3Data, officeaddress: text })} multiline numberOfLines={5} maxLength={120} />
 
                             <Text style={styles.label}>Pin Location in Map</Text>
-                            <View styles={styles.mapTextInput}>
-                                <GooglePlacesAutocomplete
-                                    placeholder="Search location"
-                                    fetchDetails={true}
-                                    onPress={handlePlaceSelect}
-                                    onFail={(error) => console.error(error)}
-                                    query={{
-                                        key: GOOGLE_MAPS_API_KEY,
-                                        language: "en",
-                                    }}
-                                    styles={styles.mapTextInput}
-                                    keyboardShouldPersistTaps="handled"
-                                />
-                            </View>
+                            <KeyboardAvoidingView
+                                behavior={Platform.OS === "ios" ? "padding" : "height"}
+                                style={{ flex: 1 }}
+                            >
+                                <View style={{ flex: 1 }}>
+                                    <GooglePlacesAutocomplete
+                                        placeholder="Search location"
+                                        fetchDetails={true}
+                                        onPress={handlePlaceSelect}
+                                        query={{
+                                            key: GOOGLE_MAPS_API_KEY,
+                                            language: "en",
+                                        }}
+                                        styles={styles.mapTextInput}
+                                        keyboardShouldPersistTaps="handled"
+                                        listViewDisplayed="auto"
+                                        nestedScrollEnabled={true}
+                                    />
+                                </View>
+                            </KeyboardAvoidingView>
 
                             <Text style={{ marginVertical: 10, fontWeight: "bold" }}>Pin Location on Map</Text>
                             <MapView

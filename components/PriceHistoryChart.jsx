@@ -8,6 +8,7 @@ const PriceHistoryChart = ({ priceHistoryData }) => {
     const [selectedYear, setSelectedYear] = useState(""); // Year filter
     const [availableYears, setAvailableYears] = useState([]); // Unique years
     const [tooltip, setTooltip] = useState(null); // Tooltip state
+    // console.log("Raw Data:", priceHistoryData);
 
     useEffect(() => {
         if (Array.isArray(priceHistoryData) && priceHistoryData.length > 0) {
@@ -22,26 +23,36 @@ const PriceHistoryChart = ({ priceHistoryData }) => {
             let filteredData = priceHistoryData.filter(
                 item => new Date(item.dateValue).getFullYear() === selectedYear
             );
-
+    
+            // Sort the data by date
             filteredData = filteredData.sort((a, b) => new Date(a.dateValue) - new Date(b.dateValue));
-
+    
             // Format Date as "Jan 25"
             const labels = filteredData.map(item => {
                 const date = new Date(item.dateValue);
-                const month = date.toLocaleString("en-US", { month: "short" }); // "Jan"
-                const day = date.getDate(); // "25"
-                return `${month} ${day}`;
+                return `${date.toLocaleString("en-US", { month: "short" })} ${date.getDate()}`;
             });
-
+    
             // Parse Prices
             const prices = filteredData.map(item => parseFloat(item.priceValue));
-
+    
+            // ✅ Reset the data before updating
             setChartData({
-                labels,
-                datasets: [{ data: prices }]
+                labels: [...labels], // Ensure it's a fresh array
+                datasets: [{ data: [...prices] }] // Ensure it's a fresh array
             });
+            // console.log("Filtered Data:", filteredData);
+            // console.log("Labels:", labels);
+            // console.log("Prices:", prices);
+    
+        } else {
+            // ✅ Ensure the chart is cleared if no data
+            setChartData({ labels: [], datasets: [] });
         }
     }, [selectedYear, priceHistoryData]);
+    
+
+
 
     // ✅ Function to format Y-axis price labels
     const formatPrice = (value) => {

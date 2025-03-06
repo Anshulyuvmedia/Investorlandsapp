@@ -23,15 +23,16 @@
     },
     "android": {
       "package": "com.investor.investorland",
-      "permissions": [
-        "ACCESS_FINE_LOCATION",
-        "ACCESS_COARSE_LOCATION"
-      ],
       "adaptiveIcon": {
         "foregroundImage": "./assets/images/investorIcon.png",
         "backgroundColor": "#ffffff"
       },
-      "runtimeVersion": "1.0.0"
+      "runtimeVersion": "1.0.0",
+      "config": {
+        "googleMaps": {
+          "apiKey": "AIzaSyA_KLtDmYZB0Qy_b0f6LHJSlDV2wYYPf8s"
+        }
+      }
     },
     "web": {
       "bundler": "metro",
@@ -86,8 +87,10 @@
         "projectId": "b9b062d0-380c-4ab0-8b80-cb450a9dc58a"
       },
       "GOOGLE_MAPS_API_KEY": "AIzaSyA_KLtDmYZB0Qy_b0f6LHJSlDV2wYYPf8s",
-      "ANDROID_CLIENT_ID": "674185229942-hkqcgtqbjja7gh5ilnb1t8ed7t1pu72t.apps.googleusercontent.com",
-      "WEB_CLIENT_ID": "674185229942-u0ueij6dphapn8a8bacgtnmm1omoricq.apps.googleusercontent.com"
+      "ANDROID_CLIENT_ID": "429638913170-5mhhuo7d8jcb3puni9ggephkqi601kab.apps.googleusercontent.com",
+      "WEB_CLIENT_ID": "429638913170-oeb8ah87ve9hqgilbpnnvghburkd9f8h.apps.googleusercontent.com",
+      "IOS_CLIENT_ID": "429638913170-m3o3jo3tpf1gst47v76cmd0k7tq2qmp9.apps.googleusercontent.com",
+      "EXPO_CLIENT_ID": "b9b062d0-380c-4ab0-8b80-cb450a9dc58a"
     },
     "owner": "anshulyuvmedia",
     "updates": {

@@ -1,4 +1,4 @@
-import { FlatList, Image, ScrollView, Text, TouchableOpacity, View, Dimensions, Platform, ActivityIndicator, Share } from "react-native";
+import { FlatList, Image, ScrollView, Alert, Text, TouchableOpacity, View, Dimensions, Platform, ActivityIndicator, Share } from "react-native";
 import { router, useLocalSearchParams } from "expo-router";
 import icons from "@/constants/icons";
 import images from "@/constants/images";
@@ -16,8 +16,7 @@ import MortgageCalculator from "@/components/MortgageCalculator";
 import * as Linking from 'expo-linking';
 
 const PropertyDetails = () => {
-    const [propertyId, setPropertyId] = useState(useLocalSearchParams().id);
-    const [address, setAddress] = useState("");
+    const propertyId = useLocalSearchParams().id;
     const windowHeight = Dimensions.get("window").height;
     const [propertyData, setPropertyData] = useState(null);
     const [loading, setLoading] = useState(false);
@@ -48,6 +47,25 @@ const PropertyDetails = () => {
 
     const openPdf = (pdfUrl) => {
         Linking.openURL(pdfUrl);
+    };
+    const openWhatsApp = (phoneNumber) => {
+        let url = "";
+
+        if (Platform.OS === "android") {
+            url = `whatsapp://send?phone=${phoneNumber}`;
+        } else {
+            url = `https://wa.me/${phoneNumber}`; // iOS uses wa.me
+        }
+
+        Linking.canOpenURL(url)
+            .then((supported) => {
+                if (supported) {
+                    Linking.openURL(url);
+                } else {
+                    Alert.alert("WhatsApp is not installed");
+                }
+            })
+            .catch((err) => console.error("An error occurred", err));
     };
 
 
@@ -355,14 +373,12 @@ const PropertyDetails = () => {
                         <Text className='text-black-300 text-sm font-rubik-medium ml-2'>
                             {propertyData.floor} Floors
                         </Text>
-
                         <View className='flex  flex-row items-center justify-center bg-primary-100 rounded-full size-10 ml-7'>
                             <Image source={icons.bath} className='size-4' />
                         </View>
                         <Text className='text-black-300 text-sm font-rubik-medium ml-2'>
                             {propertyData.bathroom} Bathroom
                         </Text>
-
                     </View>
 
                     <View className="w-full border-t border-primary-200 pt-7 mt-5">
@@ -374,32 +390,26 @@ const PropertyDetails = () => {
                     <View className="flex flex-row items-center justify-between mt-4">
                         <View className="flex flex-row items-center">
                             <Image
-                                source={images.avatar}
+                                source={images.appfavicon}
                                 className="size-14 rounded-full"
                             />
 
                             <View className="flex flex-col items-start justify-center ml-3">
                                 <Text className="text-lg text-black-300 text-start font-rubik-bold">
-                                    User
+                                    Investor Land's Consultant
                                 </Text>
                                 <Text className="text-sm text-black-200 text-start font-rubik-medium">
-                                    example@gmail.com
+                                    You are one call away.
                                 </Text>
                             </View>
                         </View>
 
                         <View className="flex flex-row items-center gap-3">
-                            <TouchableOpacity>
-                                <Image
-                                    source={icons.chat}
-                                    className="size-7"
-                                />
+                            <TouchableOpacity onPress={() => openWhatsApp("919876543210")}>
+                                <Image source={icons.chat} className="size-7" />
                             </TouchableOpacity>
                             <TouchableOpacity>
-                                <Image
-                                    source={icons.phone}
-                                    className="size-7"
-                                />
+                                <Image source={icons.phone} className="size-7" />
                             </TouchableOpacity>
                         </View>
                     </View>
@@ -521,14 +531,17 @@ const PropertyDetails = () => {
                         </View>
 
                     </View>
-                    <View className="mt-4">
-                        <Text className="text-black-300 text-xl font-rubik-bold">
-                            Documents
-                        </Text>
-                        <View className="">
-                            <MasterPlanList masterPlanDocs={masterPlanDocs} />
+                    {Array.isArray(masterPlanDocs) && masterPlanDocs.length > 0 && (
+                        <View className="mt-4">
+                            <Text className="text-black-300 text-xl font-rubik-bold">
+                                Property Master Plan
+                            </Text>
+                            <View>
+                                <MasterPlanList masterPlanDocs={masterPlanDocs} />
+                            </View>
                         </View>
-                    </View>
+                    )}
+
                     <View className="mt-4">
                         <View className="">
                             <PriceHistoryChart priceHistoryData={priceHistoryData} />
@@ -546,7 +559,7 @@ const PropertyDetails = () => {
             {/* bottom book now button */}
             <View className="absolute bg-white bottom-0 w-full rounded-t-2xl border-t border-r border-l border-primary-200 p-7">
                 <View className="flex flex-row items-center justify-between gap-10">
-                    <View className="flex flex-col items-start">
+                    {/* <View className="flex flex-col items-start">
                         <Text className="text-black-200 text-xs font-rubik-medium">
                             Price
                         </Text>
@@ -556,7 +569,7 @@ const PropertyDetails = () => {
                         >
                             ₹{propertyData.price}
                         </Text>
-                    </View>
+                    </View> */}
 
                     <TouchableOpacity onPress={() => handleEnquiry()} className="flex-1 flex flex-row items-center justify-center bg-yellow-800 py-3 rounded-full shadow-md shadow-zinc-400">
                         <Text className="text-white text-lg text-center font-rubik-bold">
