@@ -419,21 +419,26 @@ const PropertyDetails = () => {
                         <Text className='text-black-200 text-base font-rubik mt-2'>
                             {propertyData.discription}
                         </Text>
+                        {propertyData.nearbylocation && (
+                            <>
+                                <Text className='text-black-300 text-base font-rubik-medium mt-3'>Near by Locations:</Text>
+                                <Text className='text-black-200 text-base font-rubik mt-2'>
+                                    {propertyData.nearbylocation}
+                                </Text>
+                            </>
+                        )}
 
-                        <Text className='text-black-300 text-base font-rubik-medium mt-3'>Near by Locations:</Text>
-                        <Text className='text-black-200 text-base font-rubik mt-2'>
-                            {propertyData.nearbylocation}
-                        </Text>
-
-                        <Text className='text-black-300 text-center font-rubik-medium mt-2 bg-blue-100 flex-grow p-2 rounded-full'>
-                            Approx Rental Income: ₹{propertyData.approxrentalincome}
-                        </Text>
+                        {propertyData.approxrentalincome && (
+                            <Text className='text-black-300 text-center font-rubik-medium mt-2 bg-blue-100 flex-grow p-2 rounded-full'>
+                                Approx Rental Income: ₹{propertyData.approxrentalincome}
+                            </Text>
+                        )}
                     </View>
 
                     {/* facilities */}
                     {amenities && Array.isArray(amenities) && amenities.length > 0 && (
                         <View className='mt-7'>
-                            <Text className='text-black-300 text-xl font-rubik-bold'>Amenties</Text>
+                            <Text className='text-black-300 text-xl font-rubik-bold'>Amenities</Text>
                             <View className="flex flex-row flex-wrap items-start justify-start mt-2 gap-3">
                                 {amenities.map((item, index) => (
                                     <View key={index} className="flex items-start">
@@ -470,13 +475,7 @@ const PropertyDetails = () => {
                             />
                         </View>
                     ) : (
-                        <View className="mt-7 justify-center items-center">
-                            <Text className="text-gray-400 text-lg">No images available</Text>
-                            <Image
-                                source={images.defaultGallery} // Fallback image
-                                className="size-40 rounded-xl"
-                            />
-                        </View>
+                        <></>
                     )}
 
                     {videoUrls.length > 0 ? (
@@ -491,9 +490,7 @@ const PropertyDetails = () => {
                             />
                         </View>
                     ) : (
-                        <View className="mt-7 justify-center items-center">
-                            <Text className="text-gray-400 text-lg">No videos available</Text>
-                        </View>
+                        <></>
                     )}
 
                     {/* location */}
@@ -541,12 +538,13 @@ const PropertyDetails = () => {
                             </View>
                         </View>
                     )}
-
-                    <View className="mt-4">
-                        <View className="">
-                            <PriceHistoryChart priceHistoryData={priceHistoryData} />
+                    {priceHistoryData && (
+                        <View className="mt-4">
+                            <View className="">
+                                <PriceHistoryChart priceHistoryData={priceHistoryData} />
+                            </View>
                         </View>
-                    </View>
+                    )}
                     <View className="mt-4">
                         <View className="">
                             <MortgageCalculator />

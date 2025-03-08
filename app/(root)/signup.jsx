@@ -9,6 +9,7 @@ import * as WebBrowser from 'expo-web-browser';
 import * as Google from 'expo-auth-session/providers/google';
 import { useNavigation } from 'expo-router';
 import { makeRedirectUri } from 'expo-auth-session';
+import Toast, { BaseToast } from 'react-native-toast-message';
 
 WebBrowser.maybeCompleteAuthSession();
 const Signup = () => {
@@ -22,6 +23,9 @@ const Signup = () => {
   const ANDROID_CLIENT_ID = Constants.expoConfig?.extra?.ANDROID_CLIENT_ID || '';
   const WEB_CLIENT_ID = Constants.expoConfig?.extra?.WEB_CLIENT_ID || '';
   const navigation = useNavigation();
+  const [snackbarVisible, setSnackbarVisible] = useState(false);
+  const [snackbarMessage, setSnackbarMessage] = useState('');
+
   const [request, response, promptAsync] = Google.useAuthRequest({
     androidClientId: ANDROID_CLIENT_ID,
     webClientId: WEB_CLIENT_ID,
@@ -37,6 +41,35 @@ const Signup = () => {
       handleGoogleSignIn(id_token);
     }
   }, [response]);
+
+  const toastConfig = {
+    success: (props) => (
+        <BaseToast
+            {...props}
+            style={{ borderLeftColor: "green" }}
+            text1Style={{
+                fontSize: 16,
+                fontWeight: "bold",
+            }}
+            text2Style={{
+                fontSize: 14,
+            }}
+        />
+    ),
+    error: (props) => (
+        <BaseToast
+            {...props}
+            style={{ borderLeftColor: "red" }}
+            text1Style={{
+                fontSize: 16,
+                fontWeight: "bold",
+            }}
+            text2Style={{
+                fontSize: 14,
+            }}
+        />
+    ),
+};
 
   const handleGoogleSignIn = async (idToken) => {
     try {
@@ -54,48 +87,40 @@ const Signup = () => {
       const result = await response.json();
 
       if (response.ok) {
-        Alert.alert('Success', 'You are registered successfully!');
-        navigation.navigate('Home'); // Navigate to home after success
+        Toast.show({ type: 'success', text1: 'Success', text2: 'You are registered successfully!' });
+        navigation.navigate('Home');
       } else {
-        Alert.alert('Error', result.message || 'Registration failed');
+        Toast.show({ type: 'error', text1: 'Error', text2: result.message || 'Registration failed' });
       }
     } catch (error) {
       console.error('Google Registration Error:', error);
-      Alert.alert('Error', 'An unexpected error occurred');
+      Toast.show({ type: 'error', text1: 'Error', text2: 'An unexpected error occurred' });
     }
   };
 
   const pickDocument = async () => {
     try {
       const result = await DocumentPicker.getDocumentAsync({
-        type: ['image/*', 'application/pdf'], // Allow only images and PDFs
+        type: ['image/*', 'application/pdf'],
         copyToCacheDirectory: true,
-        multiple: false, // Allow single file selection
+        multiple: false,
       });
 
-      if (result.canceled) {
-        console.log('Document selection was canceled.');
-        return;
-      }
+      if (result.canceled) return;
 
       const selectedFile = result.assets[0];
 
-      // Ensure valid MIME type
       if (!['image/png', 'image/jpeg', 'image/jpg', 'application/pdf'].includes(selectedFile.mimeType)) {
-        Alert.alert('Invalid File', 'Please select a PDF or an image file (PNG, JPG, JPEG).');
+        Toast.show({ type: 'error', text1: 'Invalid File', text2: 'Please select a PDF or an image file (PNG, JPG, JPEG).' });
         return;
       }
 
-      console.log('Selected Document:', selectedFile);
-      setCompanyDocument(selectedFile); // Store the selected file in state
-
+      setCompanyDocument(selectedFile);
     } catch (error) {
       console.error('Document Picker Error:', error);
-      Alert.alert('Error', 'An error occurred while selecting a document.');
+      Toast.show({ type: 'error', text1: 'Error', text2: 'An error occurred while selecting a document.' });
     }
   };
-
-
 
   const handleRegister = async () => {
     if (email && password && username && mobile && (isUser || (companyName && companyDocument))) {
@@ -127,11 +152,7 @@ const Signup = () => {
         const result = await response.json();
 
         if (response.ok && result.success) {
-          Alert.alert('Success', 'User registered successfully!', [
-            { text: 'OK', onPress: () => navigation.navigate('Signin') } // Redirect to login page
-          ]);
-
-          // Reset Form Fields
+          Toast.show({ type: 'success', text1: 'Success', text2: 'User registered successfully!' });
           setUsername('');
           setMobile('');
           setEmail('');
@@ -139,21 +160,20 @@ const Signup = () => {
           setCompanyName('');
           setCompanyDocument(null);
 
-        } else if (result.message?.includes('already registered')) {
-          Alert.alert('Registration Error', 'This email is already registered. Please log in.');
+          setTimeout(() => {
+            navigation.navigate('signin');
+          }, 2000);
         } else {
-          Alert.alert('Error', result.message || 'Registration failed');
+          Toast.show({ type: 'error', text1: 'Error', text2: result.message || 'Registration failed' });
         }
-
       } catch (error) {
         console.error('Registration Error:', error);
-        Alert.alert('Error', 'An unexpected error occurred');
+        Toast.show({ type: 'error', text1: 'Error', text2: 'An unexpected error occurred' });
       }
     } else {
-      Alert.alert('Validation Error', 'Please fill in all required fields');
+      Toast.show({ type: 'error', text1: 'Error', text2: 'Please fill in all required fields' });
     }
   };
-
 
   return (
     <SafeAreaView className="flex-1 bg-white">
@@ -237,6 +257,7 @@ const Signup = () => {
             </Text>
           </Link>
         </View>
+        <Toast config={toastConfig} position="bottom" />
       </ScrollView>
     </SafeAreaView>
   );

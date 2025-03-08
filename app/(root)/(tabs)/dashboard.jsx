@@ -12,7 +12,7 @@ const Dashboard = () => {
   const [userData, setUserData] = useState(null);
   const [loading, setLoading] = useState(false);
   const router = useRouter();
-  const [image, setImage] = useState(images.avatar); // Default avatar
+  const [image, setImage] = useState(images.avatar);
 
   useEffect(() => {
     const fetchUserData = async () => {
@@ -23,7 +23,7 @@ const Dashboard = () => {
           await AsyncStorage.removeItem('userData');
           router.push('/signin');
           return;
-      }
+        }
         // Fetch user data from API
         const response = await axios.get(`https://investorlands.com/api/userprofile?id=${parsedUserData.id}`);
         // console.log('API Response:', response.data);

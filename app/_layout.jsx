@@ -3,6 +3,8 @@ import { useFonts } from "expo-font";
 import { useEffect, useState } from "react";
 import AsyncStorage from "@react-native-async-storage/async-storage";
 import './globals.css';
+import Toast from 'react-native-toast-message';
+import { View } from 'react-native';
 
 export default function RootLayout() {
     const [fontsLoaded] = useFonts({
@@ -60,5 +62,10 @@ export default function RootLayout() {
 
     if (!appIsReady) return null;
 
-    return <Stack screenOptions={{ headerShown: false }} />;
+    return (
+        <View style={{ flex: 1 }}>
+            <Stack screenOptions={{ headerShown: false }} />
+            <Toast />
+        </View>
+    );
 }

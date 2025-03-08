@@ -49,10 +49,10 @@ const TabsLayout = () => {
             <Tabs.Screen
                 name="myproperties"
                 options={{
-                    title: "My Properties",
+                    title: "My Investments",
                     headerShown: false,
                     tabBarIcon: ({ focused }) => (
-                        <TabIcon focused={focused} icon={icons.search} title="My Properties" />
+                        <TabIcon focused={focused} icon={icons.search} title="My Investments" />
                     ),
                 }}
             />

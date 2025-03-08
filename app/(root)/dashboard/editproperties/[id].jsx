@@ -50,6 +50,8 @@ const Editproperty = () => {
         latitude: "",
         longitude: "",
     });
+    const [fullAddress, setFullAddress] = useState("");
+
     const [show, setShow] = useState(false);
     const [selectedDate, setSelectedDate] = useState('');
     const [historyPrice, setHistoryPrice] = useState('');
@@ -276,6 +278,7 @@ const Editproperty = () => {
     const handlePlaceSelect = (data, details = null) => {
         if (details?.geometry?.location) {
             const { lat, lng } = details.geometry.location;
+            setFullAddress(details.formatted_address);
             setRegion({
                 latitude: lat,
                 longitude: lng,
@@ -294,6 +297,7 @@ const Editproperty = () => {
 
     // Function to handle manual selection on the map
     const handleMapPress = (e) => {
+        if (!e?.nativeEvent?.coordinate) return;
         const { latitude, longitude } = e.nativeEvent.coordinate;
         setRegion({
             latitude,
@@ -948,10 +952,12 @@ const Editproperty = () => {
                                         language: "en",
                                     }}
                                     styles={styles.mapTextInput}
-                                    keyboardShouldPersistTaps="handled"
+                                    debounce={400} // Reduce API calls
                                 />
                             </View>
-
+                            <View style={{ backgroundColor: '#edf5ff', padding: 5, borderRadius: 10 }}>
+                                <Text style={styles.label}>Location: {fullAddress}</Text>
+                            </View>
                             <Text style={{ marginVertical: 10, fontWeight: "bold" }}>Pin Location on Map</Text>
                             <View>
                                 <MapView
@@ -1208,10 +1214,10 @@ const styles = StyleSheet.create({
         textAlignVertical: 'top',  // hack android
         height: 110,
         fontSize: 14,
-        marginTop: 10,
+        marginTop: 20,
         borderRadius: 10,
         color: '#333',
-        paddingHorizontal: 15,
+        padding: 15,
         backgroundColor: '#edf5ff',
     },
     image: {

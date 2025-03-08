@@ -11,7 +11,6 @@ import axios from 'axios';
 import AsyncStorage from '@react-native-async-storage/async-storage';
 import MapView, { Marker } from "react-native-maps";
 import { GooglePlacesAutocomplete } from "react-native-google-places-autocomplete";
-// import { GooglePlacesAutocomplete } from "expo-google-places-autocomplete";
 import Constants from "expo-constants";
 import 'react-native-get-random-values';
 import DateTimePicker from '@react-native-community/datetimepicker';
@@ -48,7 +47,7 @@ const Addproperty = () => {
         latitude: 20.5937, // Default to India's coordinates
         longitude: 78.9629,
     });
-
+    const [fullAddress, setFullAddress] = useState("");
     const [show, setShow] = useState(false);
     const [selectedDate, setSelectedDate] = useState('');
     const [historyPrice, setHistoryPrice] = useState('');
@@ -275,16 +274,17 @@ const Addproperty = () => {
     const handlePlaceSelect = (data, details = null) => {
         if (details?.geometry?.location) {
             const { lat, lng } = details.geometry.location;
+            setFullAddress(details.formatted_address); // Save complete address
 
             setRegion({
-                latitude: Number(lat),  // Ensure it's a number
+                latitude: Number(lat),
                 longitude: Number(lng),
                 latitudeDelta: 0.015,
                 longitudeDelta: 0.0121,
             });
 
             setCoordinates({
-                latitude: Number(lat),  // Store as number
+                latitude: Number(lat),
                 longitude: Number(lng),
             });
         }
@@ -292,20 +292,22 @@ const Addproperty = () => {
 
     // Function to handle manual selection on the map
     const handleMapPress = (e) => {
+        if (!e?.nativeEvent?.coordinate) return;
+
         const { latitude, longitude } = e.nativeEvent.coordinate;
 
-        setRegion({
-            latitude: Number(latitude),
-            longitude: Number(longitude),
-            latitudeDelta: 0.015,
-            longitudeDelta: 0.0121,
+        setCoordinates({
+            latitude,
+            longitude,
         });
 
-        setCoordinates({
-            latitude: Number(latitude),
-            longitude: Number(longitude),
-        });
+        setRegion((prev) => ({
+            ...prev,
+            latitude,
+            longitude,
+        }));
     };
+
 
     const getUserData = async () => {
         try {
@@ -759,35 +761,31 @@ const Addproperty = () => {
                             <Text style={styles.label}>Property Address</Text>
                             <TextInput style={styles.textarea} placeholder="Property Address" value={step3Data.officeaddress} onChangeText={text => setStep3Data({ ...step3Data, officeaddress: text })} multiline numberOfLines={5} maxLength={120} />
 
-                            <Text style={styles.label}>Pin Location in Map</Text>
-                            <KeyboardAvoidingView
-                                behavior={Platform.OS === "ios" ? "padding" : "height"}
-                                style={{ flex: 1 }}
-                            >
-                                <View style={{ flex: 1 }}>
-                                    <GooglePlacesAutocomplete
-                                        placeholder="Search location"
-                                        fetchDetails={true}
-                                        onPress={handlePlaceSelect}
-                                        query={{
-                                            key: GOOGLE_MAPS_API_KEY,
-                                            language: "en",
-                                        }}
-                                        styles={styles.mapTextInput}
-                                        keyboardShouldPersistTaps="handled"
-                                        listViewDisplayed="auto"
-                                        nestedScrollEnabled={true}
-                                    />
-                                </View>
-                            </KeyboardAvoidingView>
+                            <Text style={styles.label}>Search location on google</Text>
+                            <GooglePlacesAutocomplete
+                                placeholder="Search location"
+                                fetchDetails={true} // Ensure this is true to get details
+                                onPress={handlePlaceSelect}
+                                query={{
+                                    key: GOOGLE_MAPS_API_KEY,
+                                    language: 'en',
+                                }}
+                                styles={styles.mapTextInput}
+                                debounce={400} // Reduce API calls
+                            />
 
-                            <Text style={{ marginVertical: 10, fontWeight: "bold" }}>Pin Location on Map</Text>
+                            <View style={{ backgroundColor: '#edf5ff', padding:5, borderRadius:10 }}>
+                                <Text style={styles.label}>Location: {fullAddress}</Text>
+                            </View>
+
+                            <Text style={{ marginVertical: 10, fontWeight: "bold" }}>Marker on Map</Text>
                             <MapView
                                 style={{ height: 150, borderRadius: 10 }}
                                 region={region}
+                                initialRegion={region}
                                 onPress={handleMapPress}
                             >
-                                <Marker coordinate={region} />
+                                {region && <Marker coordinate={{ latitude: parseFloat(coordinates.latitude), longitude: parseFloat(coordinates.longitude) }} />}
                             </MapView>
 
                         </View>

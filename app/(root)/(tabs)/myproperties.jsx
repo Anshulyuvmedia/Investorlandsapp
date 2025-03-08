@@ -60,7 +60,7 @@ const Myproperties = () => {
         <TouchableOpacity onPress={() => router.back()} className="flex-row bg-gray-300 rounded-full w-11 h-11 items-center justify-center">
           <Image source={icons.backArrow} className="w-5 h-5" />
         </TouchableOpacity>
-        <Text className="text-lg mr-2 text-center font-rubik text-gray-700">My Properties</Text>
+        <Text className="text-lg mr-2 text-center font-rubik text-gray-700">My Investments</Text>
         <TouchableOpacity onPress={() => router.push('/notifications')}>
           <Image source={icons.bell} className='size-6' />
         </TouchableOpacity>
@@ -96,7 +96,7 @@ const Myproperties = () => {
                   <Text className="text-sm text-gray-500 mt-1">{item.city}</Text>
                   <View className="flex-row justify-between mt-2">
                     <Text className="text-sm font-semibold text-gray-700">{item.category}</Text>
-                    <Text className="text-sm font-semibold text-gray-700">₹{item.price}</Text>
+                    {/* <Text className="text-sm font-semibold text-gray-700">₹{item.price}</Text> */}
                     <TouchableOpacity onPress={() => handleEditPress(item.id)}>
                       <Text className="inline-flex items-center rounded-md capitalize px-2 py-1 text-xs font-rubik border border-red-600 bg-gray-50 text-red-600">Edit</Text>
                     </TouchableOpacity>

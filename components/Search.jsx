@@ -95,9 +95,9 @@ const Search = () => {
                     <View className="flex-1 flex flex-row items-center justify-start">
                         <Image source={icons.search} className="size-5" />
                         <TextInput
-                            value={cityData?.city || 'Search for property'}
+                            value={cityData?.city || 'Search...'}
                             editable={false}
-                            placeholder="Search for property"
+                            placeholder="Search..."
                             className="text-sm font-rubik text-black-300 ml-2 flex-1"
                         />
                     </View>
@@ -169,7 +169,7 @@ const Search = () => {
                         />
                     </View>
 
-                    <Text className="text-lg font-rubik-bold text-black-300 mt-5">Property Type</Text>
+                    <Text className="text-lg font-rubik-bold text-black-300 mt-5">Select Type</Text>
                     <RNPickerSelect
                         onValueChange={(value) => setSelectedPropertyType(value)}
                         items={categoryData.length > 0 ? categoryData.map((cat, index) => ({
@@ -178,7 +178,7 @@ const Search = () => {
                             key: cat.id || `category-${index}`, // Add unique key
                         })) : []}
                         style={pickerSelectStyles}
-                        placeholder={{ label: 'Select Property Type', value: null }}
+                        placeholder={{ label: 'Select investment type', value: null }}
                     />
 
 
@@ -195,6 +195,20 @@ const Search = () => {
 export default Search;
 
 const pickerSelectStyles = StyleSheet.create({
-    inputIOS: { fontSize: 16, padding: 12, borderWidth: 1, borderColor: 'gray', borderRadius: 10, color: 'black' },
-    inputAndroid: { fontSize: 16, paddingHorizontal: 10, backgroundColor: '#edf5ff', borderRadius: 10, color: 'black', paddingRight: 30, marginTop: 10 },
+    inputIOS: {
+        fontSize: 16,
+        paddingHorizontal: 10,
+        backgroundColor: '#edf5ff',
+        borderRadius: 20,
+        color: 'black',
+        paddingRight: 30,
+    },
+    inputAndroid: {
+        fontSize: 16,
+        paddingHorizontal: 10,
+        backgroundColor: '#edf5ff',
+        borderRadius: 20,
+        color: 'black',
+        paddingRight: 30,
+    },
 });

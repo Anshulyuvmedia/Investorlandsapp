@@ -7,7 +7,6 @@ import Search from '@/components/Search';
 import { Card, FeaturedCard } from '@/components/Cards';
 import Filters from '@/components/Filters';
 import { Link, useRouter } from 'expo-router';
-import { Colors } from '@/constants/Colors';
 import AsyncStorage from '@react-native-async-storage/async-storage';
 import axios from 'axios';
 // import * as Location from 'expo-location';
@@ -141,7 +140,7 @@ const Index = () => {
                     <View className='px-5'>
                         <View className='flex flex-row items-center justify-between mt-5'>
                             <TouchableOpacity onPress={() => router.push('/dashboard')} className='flex flex-row items-center ml-2 justify-center'>
-                                <Image source={typeof image === 'string' ? { uri: image } : image} className='size-12 rounded-full' />
+                                <Image source={typeof image === 'string' ? { uri: image } : images.avatar} className='size-12 rounded-full' />
                                 <View className='flex flex-col items-start ml-2 justify-center'>
                                     <Text className='text-xs font-rubik text-black-100'>
                                         Welcome

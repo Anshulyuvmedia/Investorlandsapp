@@ -10,6 +10,8 @@ import axios from 'axios';
 import * as Linking from 'expo-linking';
 import * as FileSystem from 'expo-file-system';
 import AsyncStorage from '@react-native-async-storage/async-storage';
+import Toast, { BaseToast } from 'react-native-toast-message';
+import * as Sharing from 'expo-sharing';
 
 const EditProfile = () => {
     const [image, setImage] = useState(null);
@@ -41,6 +43,7 @@ const EditProfile = () => {
 
             const response = await axios.get(`https://investorlands.com/api/userprofile?id=${parsedUserData.id}`);
             const data = response.data.data;
+            // console.log(response.data.data);
 
             setUserId(data.id);
             setUsername(data.name);
@@ -48,6 +51,7 @@ const EditProfile = () => {
             setEmail(data.email);
             setPhoneNumber(data.mobile);
             setCompanyName(data.company_name);
+            setCompanyDocs(data.company_document ? [data.company_document] : []);
 
             let profileImage = data.profile_photo_path;
 
@@ -73,14 +77,41 @@ const EditProfile = () => {
         }
     };
 
-
+    const toastConfig = {
+        success: (props) => (
+            <BaseToast
+                {...props}
+                style={{ borderLeftColor: "green" }}
+                text1Style={{
+                    fontSize: 16,
+                    fontWeight: "bold",
+                }}
+                text2Style={{
+                    fontSize: 14,
+                }}
+            />
+        ),
+        error: (props) => (
+            <BaseToast
+                {...props}
+                style={{ borderLeftColor: "red" }}
+                text1Style={{
+                    fontSize: 16,
+                    fontWeight: "bold",
+                }}
+                text2Style={{
+                    fontSize: 14,
+                }}
+            />
+        ),
+    };
 
     // Handle image selection
     const pickImage = async () => {
         let result = await ImagePicker.launchImageLibraryAsync({
             mediaTypes: ImagePicker.MediaTypeOptions.Images,
             allowsEditing: true,
-            aspect: [4, 3],
+            aspect: [1, 1],
             quality: 1,
         });
 
@@ -93,110 +124,134 @@ const EditProfile = () => {
     const pickDocument = async () => {
         try {
             const result = await DocumentPicker.getDocumentAsync({
-                type: '*/*',
+                type: ['image/*', 'application/pdf'],
                 copyToCacheDirectory: true,
+                multiple: false,
             });
-            if (result.type === 'success') {
-                setCompanyDocs(prevDocs => [...prevDocs, result]);
-            }
-        } catch (error) {
-            console.error('Error picking document:', error);
-        }
-    };
 
+            if (result.canceled) return;
 
-    const downloadAndOpenFile = async (fileUri, fileName) => {
-        if (!fileUri || !fileName) {
-            Alert.alert('Error', 'Invalid file URL or file name.');
-            return;
-        }
+            const { mimeType, uri, name } = result.assets[0]; // Ensure correct structure
 
-        try {
-            const downloadResumable = FileSystem.createDownloadResumable(
-                fileUri,
-                FileSystem.documentDirectory + fileName
-            );
-
-            const { uri } = await downloadResumable.downloadAsync();
-            console.log('Downloaded file to:', uri);
-
-            if (Platform.OS === 'android') {
-                const contentUri = await FileSystem.getContentUriAsync(uri);
-                IntentLauncher.startActivityAsync('android.intent.action.VIEW', {
-                    data: contentUri,
-                    flags: 1,
-                    type: 'application/pdf',
+            if (!['image/png', 'image/jpeg', 'image/jpg', 'application/pdf'].includes(mimeType)) {
+                Toast.show({
+                    type: 'error',
+                    text1: 'Invalid File',
+                    text2: 'Please select a PDF or an image file (PNG, JPG, JPEG).',
                 });
-            } else if (Platform.OS === 'ios') {
-                await Linking.openURL(uri);
-            } else {
-                Alert.alert('Unsupported Platform', 'This feature is only supported on Android and iOS.');
+                return;
             }
+
+            // Replace the old document with the new one
+            setCompanyDocs([{ uri, name, mimeType }]);
+
+            Toast.show({
+                type: 'success',
+                text1: 'File Added',
+                text2: `${name} has been successfully added.`,
+            });
+
         } catch (error) {
-            console.error('Download error:', error);
-            Alert.alert('Error', 'Failed to download and open the document.');
+            console.error('Document Picker Error:', error);
+            Toast.show({
+                type: 'error',
+                text1: 'Error',
+                text2: 'An error occurred while selecting a document.',
+            });
         }
     };
 
+    const openFileInBrowser = async (fileName) => {
+        try {
+            if (!fileName) {
+                Toast.show({
+                    type: 'error',
+                    text1: 'Error',
+                    text2: 'File not found.',
+                });
+                return;
+            }
 
+            const fileUrl = `https://investorlands.com/assets/images/Users/${fileName}`;
+            await Linking.openURL(fileUrl);
+        } catch (error) {
+            console.error('Error opening file:', error);
+            Toast.show({
+                type: 'error',
+                text1: 'Error',
+                text2: 'Could not open the file.',
+            });
+        }
+    };
 
     const handleSubmit = async () => {
         setLoading(true);
-
+        
         try {
             const formData = new FormData();
             formData.append('name', username);
             formData.append('email', email);
             formData.append('mobile', phoneNumber);
             formData.append('company_name', companyName);
-
-            // ✅ Upload Image Only If It's New
-            if (image && !image.startsWith('http')) {
-                formData.append('profile_photo', {
+    
+            // ✅ Append image ONLY if it's a local file
+            if (image && image.startsWith('file://')) { 
+                formData.append('myprofileimage', {
                     uri: image,
                     name: 'profile.jpg',
                     type: 'image/jpeg',
                 });
             }
-
-            // ✅ Upload Only New Documents
-            companyDocs.forEach((doc, index) => {
-                if (doc.uri && !doc.uri.startsWith('http')) {
-                    const fileType = doc.mimeType || 'application/pdf';
-                    const fileName = doc.name || `document_${index + 1}.pdf`;
-
-                    formData.append(`company_documents[${index}]`, {
+    
+            // ✅ Append document if changed
+            if (companyDocs.length > 0) {
+                const doc = companyDocs[0];
+                if (doc.uri && doc.uri.startsWith('file://')) {
+                    formData.append('company_document', {
                         uri: doc.uri,
-                        name: fileName,
-                        type: fileType,
+                        name: doc.name || 'document.pdf',
+                        type: doc.mimeType || 'application/pdf',
                     });
                 }
-            });
-
-            const response = await axios.post(`https://investorlands.com/api/updateuserprofile/${userId}`, formData, {
-                headers: {
-                    'Content-Type': 'multipart/form-data',
-                },
-            });
-
+            }
+    
+            console.log("Submitting FormData:", formData);
+    
+            const response = await axios.post(
+                `https://investorlands.com/api/updateuserprofile/${userId}`,
+                formData,
+                {
+                    headers: {
+                        'Content-Type': 'multipart/form-data',
+                        'Accept': 'application/json',
+                    },
+                }
+            );
+    
             if (response.status === 200) {
-                Alert.alert('Success', 'Profile updated successfully!');
+                Toast.show({
+                    type: 'success',
+                    text1: 'Success',
+                    text2: 'Profile updated successfully!',
+                });
+    
+                fetchProfileData(); // Refresh profile
             } else {
                 throw new Error('Unexpected server response.');
             }
         } catch (error) {
             console.error('Error updating profile:', error);
-
-            if (error.response) {
-                Alert.alert('Server Error', error.response.data.message || 'Something went wrong on the server.');
-            } else {
-                Alert.alert('Network Error', 'Please check your internet connection and try again.');
-            }
+            Toast.show({
+                type: 'error',
+                text1: 'Update Failed',
+                text2: 'Could not update profile. Try again later.',
+            });
         } finally {
             setLoading(false);
         }
     };
-
+    
+    
 
     return (
         <SafeAreaView style={styles.container}>
@@ -207,6 +262,7 @@ const EditProfile = () => {
                 <Text style={styles.headerText} className="capitalize">Edit {usertype} Profile</Text>
                 <View></View>
             </View>
+            <Toast config={toastConfig} position="top" />
 
             {loading ? (
                 <ActivityIndicator size="large" color="#8a4c00" style={{ marginTop: 50 }} />
@@ -235,26 +291,31 @@ const EditProfile = () => {
                                 <Text style={styles.label}>Company Name</Text>
                                 <TextInput style={styles.input} value={companyName} onChangeText={setCompanyName} placeholder="Enter company name" />
 
-                                <Text style={styles.label}>Company Documents</Text>
+                                <Text style={styles.label}>Company Document</Text>
                                 {companyDocs.length > 0 ? (
                                     companyDocs.map((doc, index) => {
-                                        const fileName = doc.name.length > 10 ? `${doc.name.substring(0, 10)}...` : doc.name;
-                                        const fileExtension = doc.name.split('.').pop();
+                                        const fileName = typeof doc === "string" ? doc : doc.name;
+                                        const displayFileName = fileName.length > 10 ? `${fileName.substring(0, 10)}...` : fileName;
+                                        const fileExtension = fileName.split('.').pop();
+
                                         return (
                                             <View key={index} style={styles.docItem}>
-                                                <Text>{fileName}.{fileExtension}</Text>
-                                                <TouchableOpacity onPress={() => downloadAndOpenFile(doc.uri, doc.name)} style={styles.dropbox}>
-                                                    <Text style={styles.downloadText}>Download</Text>
+                                                <Image source={{ uri: "https://cdn-icons-png.flaticon.com/512/337/337946.png" }} style={styles.thumbnail} />
+                                                <Text>{displayFileName}.{fileExtension}</Text>
+                                                <TouchableOpacity onPress={() => openFileInBrowser(typeof doc === 'string' ? doc : doc.name)} style={styles.dropbox}>
+                                                    <Text style={styles.downloadText}>View Document</Text>
                                                 </TouchableOpacity>
                                             </View>
                                         );
                                     })
                                 ) : (
-                                    <Text>No documents available</Text>
+                                    <Text>No document available</Text>
                                 )}
 
+
+
                                 <TouchableOpacity onPress={pickDocument} style={styles.dropbox}>
-                                    <Text style={styles.downloadText}>Add Company Document</Text>
+                                    <Text style={styles.downloadText}>Change Company Document</Text>
                                 </TouchableOpacity>
                             </View>
                         )}
@@ -337,6 +398,11 @@ const styles = StyleSheet.create({
         borderBottomWidth: 1,
         borderBottomColor: '#ccc',
     },
+    thumbnail: {
+        width: 50,
+        height: 50,
+        marginRight: 10,
+    },
     dropbox: {
         backgroundColor: '#e0e0e0',
         padding: 10,
@@ -345,7 +411,7 @@ const styles = StyleSheet.create({
         marginTop: 10,
     },
     downloadText: {
-        color: '#8a4c00',
+        color: 'black',
     },
     submitButton: {
         backgroundColor: '#8a4c00',

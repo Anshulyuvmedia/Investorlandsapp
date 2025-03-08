@@ -74,19 +74,18 @@ export const settings = [
     onPress: '/dashboard/editprofile',
   },
   {
-    title: "My Properties",
-    icon: icons.shield,
-    onPress: '/myproperties',
-
-  },
-  {
     title: "Notifications",
     icon: icons.bell,
     onPress: '/notifications',
 
   },
   {
-    title: "Add New Property",
+    title: "My Investments",
+    icon: icons.shield,
+    onPress: '/myproperties',
+  },
+  {
+    title: "Add New Investment",
     icon: icons.addproperty,
     onPress: '/addproperty',
   },
