@@ -31,7 +31,7 @@
         <action android:name="android.intent.action.VIEW"/>
         <category android:name="android.intent.category.DEFAULT"/>
         <category android:name="android.intent.category.BROWSABLE"/>
-        <data android:scheme="investorland"/>
+        <data android:scheme="InvestorLand"/>
         <data android:scheme="com.investor.investorland"/>
         <data android:scheme="exp+investorland"/>
       </intent-filter>

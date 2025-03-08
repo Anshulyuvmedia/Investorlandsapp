@@ -33,19 +33,15 @@ const Signin = () => {
   const ANDROID_CLIENT_ID = Constants.expoConfig.extra.ANDROID_CLIENT_ID;
   const WEB_CLIENT_ID = Constants.expoConfig.extra.WEB_CLIENT_ID;
   const IOS_CLIENT_ID = Constants.expoConfig.extra.IOS_CLIENT_ID;
-  const EXPO_CLIENT_ID = Constants.expoConfig.extra.EXPO_CLIENT_ID;
 
-  // Google Auth Request
-  const [request, response, promptAsync] = Google.useAuthRequest({
-    clientId: WEB_CLIENT_ID,
-    iosClientId: IOS_CLIENT_ID,
+  const config = {
     androidClientId: ANDROID_CLIENT_ID,
-    expoClientId: EXPO_CLIENT_ID,
-    redirectUri: AuthSession.makeRedirectUri({ useProxy: true }),  // FIX HERE
-  });
-  
+    iosClientId: IOS_CLIENT_ID,
+    webClientId: WEB_CLIENT_ID,
+  };
+  // Google Auth Request
+  const [request, response, promptAsync] = Google.useAuthRequest(config);
 
-  // console.log("ANDROID_CLIENT_ID", ANDROID_CLIENT_ID);
   // Handle Email Login
   const emaillogin = async () => {
     if (!email || !password) {
@@ -79,26 +75,51 @@ const Signin = () => {
     }
   };
 
-  // Fetch user details from Google API
   const getUserInfo = async (token) => {
+    if (!token) return;
+
     try {
       const res = await fetch("https://www.googleapis.com/userinfo/v2/me", {
         headers: { Authorization: `Bearer ${token}` },
       });
+
+      if (!res.ok) {
+        throw new Error(`Failed to fetch user data: ${res.status}`);
+      }
+
       const user = await res.json();
+      await AsyncStorage.setItem("user", JSON.stringify(user));
       setUserInfo(user);
-      await SecureStore.setItemAsync("user", JSON.stringify(user)); // Store user info securely
     } catch (error) {
-      console.error("Error fetching user info:", error);
+      console.error("Failed to fetch user data:", error);
     }
   };
 
-  // Handle Google Sign-In Response
-  useEffect(() => {
-    if (response?.type === "success") {
-      getUserInfo(response.authentication.accessToken);
+
+  const signInWithGoogle = async () => {
+    try {
+      if (response?.type === 'success') {
+        const { authentication } = response;
+        if (authentication?.accessToken) {
+          await getUserInfo(authentication.accessToken);
+        }
+      }
+    } catch (error) {
+      console.error('Google Sign-In Error:', error);
     }
+  };
+
+
+  //add it to a useEffect with response as a dependency 
+  useEffect(() => {
+    // console.log('Google Auth Response:', response);
+    signInWithGoogle();
   }, [response]);
+
+
+  //log the userInfo to see user details
+  // console.log(JSON.stringify(userInfo))
+
 
   return (
     <SafeAreaView style={styles.container}>
@@ -140,14 +161,14 @@ const Signin = () => {
             <Text style={styles.forgotPassword}>Forgot password?</Text>
           </TouchableOpacity>
 
-          <Text style={styles.orText}>Or with</Text>
+          {/* <Text style={styles.orText}>Or with</Text>
 
           <TouchableOpacity onPress={() => promptAsync()} style={styles.googleButton} disabled={!request}>
             <View style={styles.googleContent}>
               <Image source={icons.google} style={styles.googleIcon} resizeMode="contain" />
               <Text style={styles.googleText}>Continue with Google</Text>
             </View>
-          </TouchableOpacity>
+          </TouchableOpacity> */}
 
           <Link href="/signup" style={styles.registerLink}>
             <Text style={styles.registerText}>

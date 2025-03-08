@@ -285,8 +285,8 @@ const Editproperty = () => {
 
             // Store selected coordinates
             setCoordinates({
-                latitude: lat?.toString() ?? "",
-                longitude: lng?.toString() ?? "",
+                latitude: parseFloat(lat) ?? 0,  // Ensure it's a number
+                longitude: parseFloat(lng) ?? 0,
             });
 
         }
@@ -304,9 +304,10 @@ const Editproperty = () => {
 
         // Store manual coordinates
         setCoordinates({
-            latitude: latitude.toString(),
-            longitude: longitude.toString(),
+            latitude: parseFloat(latitude),
+            longitude: parseFloat(longitude),
         });
+
     };
 
     const getUserData = async () => {
@@ -334,9 +335,9 @@ const Editproperty = () => {
             }
             const propertyId = propertyData?.id ?? id; // Ensure property ID is used
             const { id, user_type } = userData;
-    
+
             const formData = new FormData();
-            
+
             // ✅ Append Step 1, 2, and 3 Data
             [step1Data, step2Data, step3Data].forEach(data => {
                 Object.entries(data).forEach(([key, value]) => {
@@ -345,7 +346,7 @@ const Editproperty = () => {
                     }
                 });
             });
-    
+
             // ✅ Append additional fields
             formData.append("bedroom", step3Data?.bedroom ?? "");
             formData.append("category", selectedCategory ?? "");
@@ -354,13 +355,13 @@ const Editproperty = () => {
             formData.append("usertype", user_type ?? "");
             formData.append("amenities", JSON.stringify(amenities));
             formData.append("historydate", step2Data?.historydate ? JSON.stringify(step2Data.historydate) : "[]");
-    
+
             // ✅ Append Location Data
             formData.append("location", JSON.stringify({
                 Latitude: coordinates.latitude,
                 Longitude: coordinates.longitude,
             }));
-    
+
             // ✅ Append Thumbnail Image
             if (mainImage && !mainImage.startsWith("http")) {
                 const fileType = mainImage.split('.').pop();
@@ -370,7 +371,7 @@ const Editproperty = () => {
                     type: `image/${fileType}`,
                 });
             }
-    
+
             // ✅ Append Gallery Images
             galleryImages.forEach((imageUri, index) => {
                 if (!imageUri.startsWith("http")) {
@@ -382,7 +383,7 @@ const Editproperty = () => {
                     });
                 }
             });
-    
+
             // ✅ Append Videos
             videos.forEach((video, index) => {
                 if (video?.uri && !video.uri.startsWith("http")) {
@@ -394,7 +395,7 @@ const Editproperty = () => {
                     });
                 }
             });
-    
+
             // ✅ Append Documents
             propertyDocuments.forEach((doc, index) => {
                 if (doc?.uri && !doc.uri.startsWith("http")) {
@@ -406,7 +407,7 @@ const Editproperty = () => {
                     });
                 }
             });
-    
+
             // ✅ Append Master Plan Document
             masterPlanDoc.forEach((doc, index) => {
                 if (doc?.uri && !doc.uri.startsWith("http")) {
@@ -418,7 +419,7 @@ const Editproperty = () => {
                     });
                 }
             });
-    
+
             // ✅ File Data Object for Reference
             const fileData = {
                 galleryImages: galleryImages.filter(img => !img.startsWith("http")),
@@ -428,9 +429,9 @@ const Editproperty = () => {
                 masterplandocument: masterPlanDoc.filter(doc => doc.uri && !doc.uri.startsWith("http")),
             };
             formData.append("fileData", JSON.stringify(fileData));
-            
+
             // console.log("Uploading FormData:", formData);
-    
+
             // ✅ Send API Request
             const response = await axios.post(`https://investorlands.com/api/updatelisting/${propertyId}`, formData, {
                 headers: {
@@ -439,7 +440,7 @@ const Editproperty = () => {
                     "Authorization": `Bearer ${userToken}`
                 },
             });
-    
+
             console.log("API Response:", response.data);
             if (response.status === 200 && !response.data.error) {
                 Alert.alert("Success", "Property updated successfully!", [{ text: "OK" }]);
@@ -453,7 +454,7 @@ const Editproperty = () => {
             setLoading(false);
         }
     };
-    
+
 
 
     // Fetch Property Data
@@ -627,8 +628,8 @@ const Editproperty = () => {
                 } else {
                     console.error("priceHistoryData is not an array:", priceHistoryData);
                 }
-                
-                
+
+
 
                 if (apiData.thumbnail) {
                     setMainImage(
@@ -959,7 +960,7 @@ const Editproperty = () => {
                                     initialRegion={region}
                                     onPress={handleMapPress}
                                 >
-                                    {region && <Marker coordinate={coordinates} />}
+                                    {region && <Marker coordinate={{ latitude: parseFloat(coordinates.latitude), longitude: parseFloat(coordinates.longitude) }} />}
                                 </MapView>
                                 <Text>Latitude: {region.latitude}</Text>
                                 <Text>Longitude: {region.longitude}</Text>

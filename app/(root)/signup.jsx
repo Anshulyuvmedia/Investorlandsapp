@@ -4,7 +4,6 @@ import { SafeAreaView } from 'react-native-safe-area-context';
 import * as DocumentPicker from 'expo-document-picker';
 import images from '@/constants/images';
 import { Link } from 'expo-router';
-import icons from '@/constants/icons';
 import Constants from "expo-constants";
 import * as WebBrowser from 'expo-web-browser';
 import * as Google from 'expo-auth-session/providers/google';
@@ -69,18 +68,37 @@ const Signup = () => {
   const pickDocument = async () => {
     try {
       const result = await DocumentPicker.getDocumentAsync({
-        type: '*/*',
+        type: ['image/*', 'application/pdf'], // Allow only images and PDFs
+        copyToCacheDirectory: true,
+        multiple: false, // Allow single file selection
       });
-      if (result.type === 'success') {
-        setCompanyDocument(result);
+
+      if (result.canceled) {
+        console.log('Document selection was canceled.');
+        return;
       }
+
+      const selectedFile = result.assets[0];
+
+      // Ensure valid MIME type
+      if (!['image/png', 'image/jpeg', 'image/jpg', 'application/pdf'].includes(selectedFile.mimeType)) {
+        Alert.alert('Invalid File', 'Please select a PDF or an image file (PNG, JPG, JPEG).');
+        return;
+      }
+
+      console.log('Selected Document:', selectedFile);
+      setCompanyDocument(selectedFile); // Store the selected file in state
+
     } catch (error) {
       console.error('Document Picker Error:', error);
+      Alert.alert('Error', 'An error occurred while selecting a document.');
     }
   };
 
+
+
   const handleRegister = async () => {
-    if (email && password && username && mobile && (isUser || (companyName))) {
+    if (email && password && username && mobile && (isUser || (companyName && companyDocument))) {
       const formData = new FormData();
       formData.append('user_type', isUser ? 'user' : 'agent');
       formData.append('name', username);
@@ -88,12 +106,12 @@ const Signup = () => {
       formData.append('email', email);
       formData.append('password', password);
 
-      if (!isUser && companyName) {
+      if (!isUser && companyName && companyDocument) {
         formData.append('company_name', companyName);
         formData.append('company_document', {
           uri: companyDocument.uri,
           name: companyDocument.name,
-          type: 'application/octet-stream',
+          type: companyDocument.mimeType || 'application/octet-stream',
         });
       }
 
@@ -108,21 +126,34 @@ const Signup = () => {
 
         const result = await response.json();
 
-        if (response.ok) {
-          Alert.alert('Success', 'User registered successfully!');
-        } else if (result.message && result.message.includes('already registered')) {
-          Alert.alert('Registration Error', 'This email is already registered.');
+        if (response.ok && result.success) {
+          Alert.alert('Success', 'User registered successfully!', [
+            { text: 'OK', onPress: () => navigation.navigate('Signin') } // Redirect to login page
+          ]);
+
+          // Reset Form Fields
+          setUsername('');
+          setMobile('');
+          setEmail('');
+          setPassword('');
+          setCompanyName('');
+          setCompanyDocument(null);
+
+        } else if (result.message?.includes('already registered')) {
+          Alert.alert('Registration Error', 'This email is already registered. Please log in.');
         } else {
           Alert.alert('Error', result.message || 'Registration failed');
         }
+
       } catch (error) {
         console.error('Registration Error:', error);
         Alert.alert('Error', 'An unexpected error occurred');
       }
     } else {
-      Alert.alert('Validation Error', 'Please fill in all fields');
+      Alert.alert('Validation Error', 'Please fill in all required fields');
     }
   };
+
 
   return (
     <SafeAreaView className="flex-1 bg-white">
@@ -168,6 +199,7 @@ const Signup = () => {
               <TextInput style={styles.input} value={companyName} onChangeText={setCompanyName} placeholder="Enter company name" />
 
               <Text style={styles.label}>Company Documents</Text>
+              <Text>{companyDocument ? companyDocument.name : "No document selected"}</Text>
               <TouchableOpacity onPress={pickDocument} style={styles.dropbox}>
                 <Text style={styles.downloadText}>Add Company Document</Text>
               </TouchableOpacity>
@@ -183,16 +215,16 @@ const Signup = () => {
             </Text>
           </TouchableOpacity>
 
-          <Text style={styles.orText}>Or with</Text>
+          {/* <Text style={styles.orText}>Or with</Text>
 
           <TouchableOpacity onPress={() => promptAsync()} style={styles.googleButton}>
             <View style={styles.googleContent}>
               <Image source={icons.google} style={styles.googleIcon} resizeMode="contain" />
               <Text style={styles.googleText}>Register with Google</Text>
             </View>
-          </TouchableOpacity>
+          </TouchableOpacity> */}
 
-          <Link href="/signin" style={{ marginTop: 20, alignItems: 'center' }}>
+          <Link href="/signin" style={{ margin: 20, alignItems: 'center' }}>
             <Text
               style={{
                 fontSize: 16,

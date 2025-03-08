@@ -10,7 +10,7 @@
       "channel": "development"
     },
     "development-simulator": {
-    "developmentClient": true,
+      "developmentClient": true,
       "distribution": "internal"
     },
     "preview": {

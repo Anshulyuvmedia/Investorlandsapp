@@ -161,9 +161,9 @@ const Index = () => {
                         <View className='my-5'>
                             <View className='flex flex-row items-center justify-between'>
                                 <Text className='text-xl font-rubik-bold text-black-300'>Featured</Text>
-                                <TouchableOpacity>
+                                {/* <TouchableOpacity>
                                     <Text className='text-base font-rubik-bold' style={{ color: Colors.brown }}>See All</Text>
-                                </TouchableOpacity>
+                                </TouchableOpacity> */}
                             </View>
                         </View>
 
@@ -180,9 +180,9 @@ const Index = () => {
                         <View className='my-5'>
                             <View className='flex flex-row items-center justify-between'>
                                 <Text className='text-xl font-rubik-bold text-black-300'>Our Recommendation</Text>
-                                <TouchableOpacity>
+                                {/* <TouchableOpacity onPress={}>
                                     <Text className='text-base font-rubik-bold text-yellow-800' style={{ color: Colors.brown }}>See All</Text>
-                                </TouchableOpacity>
+                                </TouchableOpacity> */}
                             </View>
                         </View>
 

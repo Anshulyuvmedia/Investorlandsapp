@@ -514,7 +514,7 @@ const PropertyDetails = () => {
                                 region={region}
                                 initialRegion={region}
                             >
-                                {region && <Marker coordinate={coordinates} />}
+                                {region && <Marker coordinate={{ latitude: parseFloat(coordinates.latitude), longitude: parseFloat(coordinates.longitude) }} />}
                             </MapView>
 
                             {/* 🔹 Show the Address Below the Map */}

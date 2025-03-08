@@ -64,7 +64,7 @@ const EditProfile = () => {
                 profileImage = images.avatar; // Ensure default image is a valid source
             }
 
-            console.log('Final Image URL:', profileImage); // Debugging
+            // console.log('Final Image URL:', profileImage); // Debugging
             setImage(profileImage);
         } catch (error) {
             console.error('Error fetching profile data:', error);
