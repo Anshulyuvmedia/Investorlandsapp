@@ -1,10 +1,10 @@
 {
   "expo": {
-    "name": "Investorlands",
+    "name": "Investor Lands",
     "slug": "InvestorLand",
     "version": "1.0.0",
     "orientation": "portrait",
-    "icon": "./assets/images/mainlogo.jpeg",
+    "icon": "./assets/images/logo.png",
     "scheme": "investorland",
     "entryPoint": "expo-router/entry",
     "host": "localhost",
@@ -59,7 +59,7 @@
       [
         "expo-splash-screen",
         {
-          "image": "./assets/images/mainlogo.jpeg",
+          "image": "./assets/images/logo.png",
           "resizeMode": "cover",
           "backgroundColor": "#ffffff",
           "enableFullScreenImage_legacy": true

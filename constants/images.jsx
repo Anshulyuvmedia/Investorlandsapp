@@ -8,7 +8,7 @@ import whiteGradient from "@/assets/images/white-gradient.png";
 import map from "@/assets/images/map.png";
 import noResult from "@/assets/images/no-result.png";
 import applogo from "@/assets/images/mainlogo.jpeg";
-import appfavicon from "@/assets/images/icon.jpeg";
+import appfavicon from "@/assets/images/logo.png";
 
 export default {
   onboarding,
