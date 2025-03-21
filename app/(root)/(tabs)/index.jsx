@@ -173,7 +173,7 @@ const Index = () => {
                             horizontal
                             bounces={false}
                             showsHorizontalScrollIndicator={false}
-                            contentContainerClassName='flex gap-5 px-5'
+                            contentContainerClassName='flex gap-5'
                         />
 
                         <View className='my-5'>

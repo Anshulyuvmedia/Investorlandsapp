@@ -1,4 +1,4 @@
-import { Image, StyleSheet, Text, TouchableOpacity, View, TextInput, FlatList, Alert, Platform, ActivityIndicator } from 'react-native';
+import { Image, StyleSheet, Text, ScrollView, TouchableOpacity, View, TextInput, FlatList, Platform, ActivityIndicator } from 'react-native';
 import React, { useState, useEffect } from 'react';
 import { SafeAreaView } from 'react-native-safe-area-context';
 import icons from '@/constants/icons';
@@ -14,7 +14,8 @@ import { GooglePlacesAutocomplete } from "react-native-google-places-autocomplet
 import Constants from "expo-constants";
 import 'react-native-get-random-values';
 import DateTimePicker from '@react-native-community/datetimepicker';
-import { ScrollView } from 'react-native-virtualized-view';
+import { useNavigation } from '@react-navigation/native';
+import Toast, { BaseToast } from 'react-native-toast-message';
 
 const Editproperty = () => {
     const { id } = useLocalSearchParams();
@@ -24,11 +25,11 @@ const Editproperty = () => {
     const [step2Data, setStep2Data] = useState({ approxrentalincome: '', historydate: [], price: '' });
     const [step3Data, setStep3Data] = useState({ sqfoot: '', bathroom: '', floor: '', city: '', officeaddress: '', bedroom: '' });
     const [isValid, setIsValid] = useState(false);
+    const navigation = useNavigation();
 
     const [propertyData, setPropertyData] = useState([]);
     const [propertyDocuments, setPropertyDocuments] = useState([]);
     const [masterPlanDoc, setMasterPlanDoc] = useState([]);
-
     const [errors, setErrors] = useState(false);
     const [selectedCategory, setSelectedCategory] = useState(null);
     const [selectedStatus, setSelectedStatus] = useState("unpublished");
@@ -79,8 +80,52 @@ const Editproperty = () => {
     ];
     const status = [
         { label: 'Unpublished', value: 'unpublished' },
-        { label: 'Published', value: 'published' },
     ];
+    const toastConfig = {
+        success: (props) => (
+            <BaseToast
+                {...props}
+                style={{ borderLeftColor: "green" }}
+                text1Style={{
+                    fontSize: 16,
+                    fontWeight: "bold",
+                }}
+                text2Style={{
+                    fontSize: 14,
+                }}
+            />
+        ),
+        error: (props) => (
+            <BaseToast
+                {...props}
+                style={{ borderLeftColor: "red" }}
+                text1Style={{
+                    fontSize: 16,
+                    fontWeight: "bold",
+                }}
+                text2Style={{
+                    fontSize: 14,
+                }}
+            />
+        ),
+    };
+
+    const [visibleData, setVisibleData] = useState([]);
+    const [currentIndex, setCurrentIndex] = useState(10);
+
+    // Update visibleData when historydate updates
+    useEffect(() => {
+        if (step2Data.historydate.length > 0) {
+            setVisibleData(step2Data.historydate.slice(0, 10));
+        }
+    }, [step2Data.historydate]);
+
+    const loadMore = () => {
+        const nextIndex = currentIndex + 10;
+        setVisibleData(step2Data.historydate.slice(0, nextIndex));
+        setCurrentIndex(nextIndex);
+    };
+
 
     const validateStep = (step) => {
         if (step === 1) {
@@ -95,7 +140,11 @@ const Editproperty = () => {
     const onNextStep = (step) => {
         if (!validateStep(step)) {
             setErrors(true);
-            Alert.alert("Validation Error", "Please fill all required fields.");
+            Toast.show({
+                type: 'error',
+                text1: 'Validation Error',
+                text2: "Please fill all required fields.",
+            });
         } else {
             setErrors(false);
         }
@@ -104,7 +153,11 @@ const Editproperty = () => {
     const requestPermissions = async () => {
         const { status } = await ImagePicker.requestMediaLibraryPermissionsAsync();
         if (status !== 'granted') {
-            alert('Sorry, we need camera roll permissions to make this work!');
+            Toast.show({
+                type: 'error',
+                text1: 'Error',
+                text2: "Sorry, we need camera roll permissions to make this work!",
+            });
             return false;
         }
         return true;
@@ -129,6 +182,49 @@ const Editproperty = () => {
         if (!result?.canceled) {
             setMainImage(result.assets[0].uri);
         }
+    };
+
+
+    // Handle Date Change
+    const handleDateChange = (event, date) => {
+        setShow(false);
+        if (date) {
+            const formattedDate = date.toLocaleDateString("en-GB"); // Convert to YYYY-MM-DD
+            setSelectedDate(formattedDate);
+        }
+    };
+
+    // Add Price History Entry
+    const formatDate = (dateString) => {
+        const [day, month, year] = dateString.split("/");  // Split DD/MM/YYYY
+        return `${year}-${month}-${day}`;  // Convert to YYYY-MM-DD
+    };
+
+    const addPriceHistory = () => {
+        if (selectedDate && historyPrice) {
+            const newHistoryEntry = {
+                dateValue: formatDate(selectedDate),  // Convert date format
+                priceValue: historyPrice
+            };
+
+            setStep2Data((prevData) => {
+                const updatedHistory = [newHistoryEntry, ...prevData.historydate]; // Add new entry at the top
+                return { ...prevData, historydate: updatedHistory };
+            });
+
+            setSelectedDate('');
+            setHistoryPrice('');
+        }
+    };
+
+    const removePriceHistory = (index) => {
+        setStep2Data((prevData) => {
+            const updatedHistory = prevData.historydate.filter((_, i) => i !== index);
+            return { ...prevData, historydate: updatedHistory };
+        });
+
+        // Update visible data after removal
+        setVisibleData((prevData) => prevData.filter((_, i) => i !== index));
     };
 
     const pickGalleryImages = async () => {
@@ -186,45 +282,6 @@ const Editproperty = () => {
             setVideos(prevVideos => [...new Set([...prevVideos, ...selectedVideos])]);
         }
     };
-    // Handle Date Change
-    const handleDateChange = (event, date) => {
-        setShow(false);
-        if (date) {
-            const formattedDate = date.toLocaleDateString("en-GB"); // Convert to YYYY-MM-DD
-            setSelectedDate(formattedDate);
-        }
-    };
-
-    // Add Price History Entry
-    const formatDate = (dateString) => {
-        const [day, month, year] = dateString.split("/");  // Split DD/MM/YYYY
-        return `${year}-${month}-${day}`;  // Convert to YYYY-MM-DD
-    };
-
-    const addPriceHistory = () => {
-        if (selectedDate && historyPrice) {
-            const newHistoryEntry = {
-                dateValue: formatDate(selectedDate),  // Convert date format
-                priceValue: historyPrice
-            };
-
-            setStep2Data((prevData) => ({
-                ...prevData,
-                historydate: [...prevData.historydate, newHistoryEntry],
-            }));
-
-            setSelectedDate('');
-            setHistoryPrice('');
-        }
-    };
-
-    // Function to remove a specific price history entry
-    const removePriceHistory = (index) => {
-        setStep2Data((prevData) => ({
-            ...prevData,
-            historydate: prevData.historydate.filter((_, i) => i !== index),
-        }));
-    };
 
     const pickDocument = async () => {
         let result = await DocumentPicker.getDocumentAsync({
@@ -243,11 +300,6 @@ const Editproperty = () => {
         }));
 
         setPropertyDocuments(prevDocs => [...prevDocs, ...newDocuments]);
-    };
-
-    // Function to remove a document
-    const removeDocument = (index) => {
-        setPropertyDocuments(prevDocs => prevDocs.filter((_, i) => i !== index));
     };
 
     const pickMasterPlan = async () => {
@@ -269,11 +321,6 @@ const Editproperty = () => {
         setMasterPlanDoc(prevDocs => [...prevDocs, ...newDocuments]);
     };
 
-    // Function to remove a document
-    const removeMasterPlan = (index) => {
-        setMasterPlanDoc(prevDocs => prevDocs.filter((_, i) => i !== index));
-    };
-
     // Function to handle location selection from Google Places
     const handlePlaceSelect = (data, details = null) => {
         if (details?.geometry?.location) {
@@ -292,6 +339,87 @@ const Editproperty = () => {
                 longitude: parseFloat(lng) ?? 0,
             });
 
+        }
+    };
+
+    const removeGalleryImage = async (index, imageUri) => {
+        setGalleryImages(prevImages => prevImages.filter((_, i) => i !== index));
+
+        if (imageUri.startsWith("http")) {
+            try {
+                await axios.post("https://investorlands.com/api/deletefile", {
+                    property_id: propertyData.id,
+                    file_type: "gallery",
+                    file_path: imageUri.replace("https://investorlands.com/", ""),
+                });
+                Toast.show({ type: "success", text1: "Image deleted successfully." });
+            } catch (error) {
+                console.error("Failed to delete image:", error);
+            }
+        }
+    };
+
+    const removeVideo = async (index, videoUri) => {
+        console.log("Removing video at index:", index, "Video URI:", videoUri);
+
+        // Update UI first
+        setVideos(prevVideos => prevVideos.filter((_, i) => i !== index));
+
+        if (videoUri.startsWith("http")) {
+            try {
+                const response = await axios.post("https://investorlands.com/api/deletefile", {
+                    property_id: propertyData.id,
+                    file_type: "video",
+                    file_path: videoUri.replace("https://investorlands.com/", ""),
+                });
+
+                console.log("Server Response:", response.data);
+
+                if (response.data.error) {
+                    console.error("Error from API:", response.data.message);
+                    Toast.show({ type: "error", text1: response.data.message });
+                } else {
+                    console.log("Deleted video successfully:", videoUri);
+                    Toast.show({ type: "success", text1: "Video deleted successfully." });
+                }
+            } catch (error) {
+                console.error("Failed to delete video:", error.response ? error.response.data : error.message);
+            }
+        }
+    };
+
+
+    const removeDocument = async (index, docUri) => {
+        setPropertyDocuments(prevDocs => prevDocs.filter((_, i) => i !== index));
+
+        if (docUri.startsWith("http")) {
+            try {
+                await axios.post("https://investorlands.com/api/deletefile", {
+                    property_id: propertyData.id,
+                    file_type: "document",
+                    file_path: docUri.replace("https://investorlands.com/", ""),
+                });
+                Toast.show({ type: "success", text1: "Document deleted successfully." });
+            } catch (error) {
+                console.error("Failed to delete document:", error);
+            }
+        }
+    };
+
+    const removeMasterPlan = async (index, docUri) => {
+        setMasterPlanDoc(prevDocs => prevDocs.filter((_, i) => i !== index));
+
+        if (docUri.startsWith("http")) {
+            try {
+                await axios.post("https://investorlands.com/api/deletefile", {
+                    property_id: propertyData.id,
+                    file_type: "masterplan",
+                    file_path: docUri.replace("https://investorlands.com/", ""),
+                });
+                Toast.show({ type: "success", text1: "Master Plan Document deleted successfully." });
+            } catch (error) {
+                console.error("Failed to delete master plan document:", error);
+            }
         }
     };
 
@@ -325,7 +453,11 @@ const Editproperty = () => {
             };
         } catch (error) {
             console.error("Error fetching user data:", error);
-            Alert.alert("Error", "Could not retrieve user data.");
+            Toast.show({
+                type: 'error',
+                text1: 'Error',
+                text2: "Could not retrieve user data.",
+            });
             return null;
         }
     };
@@ -445,20 +577,32 @@ const Editproperty = () => {
                 },
             });
 
-            console.log("API Response:", response.data);
+            // console.log("API Response:", response.data);
             if (response.status === 200 && !response.data.error) {
-                Alert.alert("Success", "Property updated successfully!", [{ text: "OK" }]);
+                Toast.show({
+                    type: "success",
+                    text1: "Success",
+                    text2: "Property updated successfully!",
+                });
             } else {
-                Alert.alert("Error", response.data.message || "Failed to update property.");
+                console.error("❌ API Error:", response.data.message);
+                Toast.show({
+                    type: "error",
+                    text1: "Failed to update property.",
+                    text2: response.data.message || "An error occurred.",
+                });
             }
         } catch (error) {
-            console.error("Error in update property:", error);
-            Alert.alert("Error", "Failed to update property. Please try again.");
+            console.error("❌ Error updating property:", error);
+            Toast.show({
+                type: "error",
+                text1: "Error",
+                text2: "Failed to update property. Please try again.",
+            });
         } finally {
             setLoading(false);
         }
     };
-
 
 
     // Fetch Property Data
@@ -560,15 +704,23 @@ const Editproperty = () => {
                     try {
                         let galleryVideos = typeof apiData.videos === 'string' ? JSON.parse(apiData.videos) : apiData.videos;
 
-                        const videoUrls = galleryVideos.map(video =>
-                            video.startsWith('http') ? video : `https://investorlands.com/${video}`
-                        );
+                        const defaultThumbnail =
+                            typeof icons.videofile === "number"
+                                ? Image.resolveAssetSource(icons.videofile).uri
+                                : icons.videofile; // Fallback to a local or external thumbnail
 
-                        setVideos(videoUrls);
+                        const videoObjects = galleryVideos.map(video => ({
+                            id: video,
+                            uri: video.startsWith('http') ? video : `https://investorlands.com/${video}`,
+                            thumbnailImages: defaultThumbnail, // ✅ Assigning default thumbnail
+                        }));
+
+                        setVideos(videoObjects);
                     } catch (error) {
                         console.error("Error processing videos:", error);
                     }
                 }
+
 
                 if (apiData.documents) {
                     try {
@@ -609,29 +761,35 @@ const Editproperty = () => {
                     }
                 }
 
+                // Process API data
                 let priceHistoryData = apiData.pricehistory;
 
-                // Check if `pricehistory` is a string and parse it
+                // Parse if it's a string
                 if (typeof priceHistoryData === "string") {
                     try {
                         priceHistoryData = JSON.parse(priceHistoryData);
                     } catch (error) {
                         console.error("Error parsing pricehistory:", error);
+                        priceHistoryData = [];
                     }
                 }
 
-                // Ensure it's an array before setting state
+                // Ensure it's an array before updating state
                 if (Array.isArray(priceHistoryData)) {
-                    setStep2Data(prevData => ({
+                    // Sort in descending order (most recent date first)
+                    priceHistoryData.sort((a, b) => new Date(b.dateValue) - new Date(a.dateValue));
+
+                    setStep2Data((prevData) => ({
                         ...prevData,
                         historydate: priceHistoryData.map(item => ({
                             dateValue: item.dateValue,
                             priceValue: item.priceValue.toString(),
-                        })), // This replaces old data instead of appending
+                        })),
                     }));
                 } else {
                     console.error("priceHistoryData is not an array:", priceHistoryData);
                 }
+
 
 
 
@@ -684,8 +842,9 @@ const Editproperty = () => {
 
             <View className="flex justify-between items-center pt-3 flex-row">
                 <Text className="font-rubik-bold text-lg">{step1Data.property_name}</Text>
-                <Text className={`inline-flex items-center rounded-md capitalize px-2 py-1 text-xs font-rubik-bold border ${selectedStatus === 'published' ? ' bg-green-50  text-green-700  border-green-600 ' : 'bg-red-50  text-red-700 border-red-600'}`}>{selectedStatus}</Text>
+                <Text className={`inline-flex items-center rounded-md capitalize px-2 py-1 text-xs font-rubik-bold border ${selectedStatus === 'published' ? ' bg-green-50  text-green-700  border-green-600 ' : 'bg-red-50  text-red-700 border-red-600'}`}>{selectedStatus === 'published' ? 'Published' : 'Under Review'}</Text>
             </View>
+            <Toast config={toastConfig} position="top" />
 
             <View style={styles.container}>
                 <ProgressSteps>
@@ -837,24 +996,44 @@ const Editproperty = () => {
                             </TouchableOpacity>
 
                             {/* Show Table */}
-                            {step2Data.historydate.length > 0 &&
+                            {step2Data.historydate.length > 0 && (
                                 <View style={{ flexGrow: 1, minHeight: 1, marginTop: 10 }}>
-                                    <ScrollView contentContainerStyle={{ flexGrow: 1, borderWidth: 1, borderColor: '#c7c7c7', borderRadius: 10, }}>
-                                        <View>
-                                            <Text className='text-center font-rubik-bold my-2 border-b border-gray-300'>Price data for graph</Text>
-                                        </View>
-                                        {step2Data.historydate.map((item, index) => (
-                                            <View key={index} style={styles.tableRow}>
-                                                <Text style={styles.tableCell}>Rs. {parseInt(item.priceValue).toLocaleString()}</Text>
+                                    <FlatList
+                                        data={visibleData}
+                                        keyExtractor={(item, index) => index.toString()}
+                                        nestedScrollEnabled={true}
+                                        contentContainerStyle={{
+                                            flexGrow: 1,
+                                            borderWidth: 1,
+                                            borderColor: '#c7c7c7',
+                                            borderRadius: 10,
+                                        }}
+                                        ListHeaderComponent={
+                                            <Text className="text-center font-rubik-bold my-2 border-b border-gray-300">
+                                                Price Data for Graph
+                                            </Text>
+                                        }
+                                        renderItem={({ item, index }) => (
+                                            <View style={styles.tableRow}>
+                                                <Text style={styles.tableCell}>
+                                                    Rs. {parseInt(item.priceValue).toLocaleString()}
+                                                </Text>
                                                 <Text style={styles.tableCell}>{item.dateValue}</Text>
                                                 <TouchableOpacity onPress={() => removePriceHistory(index)}>
                                                     <Text style={styles.removeBtn}>❌</Text>
                                                 </TouchableOpacity>
                                             </View>
-                                        ))}
-                                    </ScrollView>
+                                        )}
+                                    />
+
+                                    {currentIndex < step2Data.historydate.length && (
+                                        <TouchableOpacity onPress={loadMore} style={styles.addButton}>
+                                            <Text style={styles.addButtonText}>View More</Text>
+                                        </TouchableOpacity>
+                                    )}
                                 </View>
-                            }
+                            )}
+
                         </View>
                     </ProgressStep>
 
@@ -889,19 +1068,27 @@ const Editproperty = () => {
                                     />
                                 </TouchableOpacity>
                             </View>
-                            <View style={{ flexGrow: 1, minHeight: 1 }}>
-                                <ScrollView horizontal nestedScrollEnabled={true} contentContainerStyle={{ flexDirection: "row" }}>
-                                    {amenities.map((item, index) => (
-                                        <View key={index} style={styles.amenityItem}>
-                                            <Text className='font-rubik-bold px-2 capitalize text-nowrap text-green-600'>{item}</Text>
+                            <View style={{ flexDirection: "row", alignItems: "center", minHeight: 50 }}>
+                                <FlatList
+                                    data={amenities}
+                                    keyExtractor={(item, index) => index.toString()}
+                                    horizontal
+                                    nestedScrollEnabled
+                                    showsHorizontalScrollIndicator={false}
+                                    contentContainerStyle={{ flexDirection: "row", alignItems: "center" }}
+                                    renderItem={({ item }) => (
+                                        <View style={styles.amenityItem}>
+                                            <Text className="font-rubik-bold px-2 capitalize text-nowrap text-green-600">{item}</Text>
                                             <TouchableOpacity onPress={() => setAmenities(amenities.filter(a => a !== item))}>
                                                 <Text style={styles.removeBtn}>❌</Text>
                                             </TouchableOpacity>
                                         </View>
-                                    ))}
-                                </ScrollView>
-
+                                    )}
+                                />
                             </View>
+
+
+
                             <View style={{ flexDirection: 'row', justifyContent: 'space-between' }}>
                                 {/* enter squre foot area */}
                                 <View style={{ flex: 1, marginRight: 5 }}>
@@ -979,101 +1166,96 @@ const Editproperty = () => {
                         nextBtnTextStyle={buttonNextTextStyle}
                         previousBtnTextStyle={buttonPreviousTextStyle}
                         onSubmit={handleSubmit}>
-                        {/* select status */}
+
+                        {/* Select Status */}
                         <View style={styles.stepContent}>
                             <Text style={styles.label}>Select Status</Text>
                             <View style={styles.pickerContainer}>
                                 <RNPickerSelect
                                     onValueChange={(value) => setSelectedStatus(value)}
                                     items={status}
-                                    value={selectedStatus} // ✅ Ensures the default value is selected
+                                    value={selectedStatus}
                                     style={pickerSelectStyles}
                                     placeholder={{ label: 'Choose an option...', value: null }}
                                 />
                             </View>
                         </View>
 
-                        {/* upload gallery */}
-                        <Text style={styles.label}>Property Gallery</Text>
-                        <View style={{ flexGrow: 1, minHeight: 1 }}>
-                            <FlatList
-                                data={galleryImages}
-                                horizontal
-                                keyExtractor={(item, index) => (item.id ? item.id.toString() : index.toString())}
-                                nestedScrollEnabled={true}
-                                contentContainerStyle={styles.fileContainer}
-                                renderItem={({ item, index }) => (
-                                    <View style={styles.thumbnailBox} className="border border-gray-300">
-                                        <Image source={{ uri: item }} style={styles.thumbnail} />
-                                        <Text className="text-center font-rubik-bold">Image: {index + 1}</Text>
-
-                                        <TouchableOpacity
-                                            onPress={() => setGalleryImages(galleryImages.filter((_, i) => i !== index))}
-                                            style={styles.deleteButton}
-                                        >
-                                            <Text className="text-white">X</Text>
-                                        </TouchableOpacity>
-                                    </View>
-                                )}
-                            />
-                        </View>
-                        <TouchableOpacity onPress={pickGalleryImages} style={styles.dropbox}>
-                            <Text style={{ textAlign: 'center' }}>Pick images from gallery</Text>
-                        </TouchableOpacity>
-
-                        {/* Upload video */}
+                        {/* Upload Gallery */}
                         <View style={styles.stepContent}>
-                            <Text style={styles.label}>Upload Videos</Text>
+                            <Text style={styles.label}>Property Gallery</Text>
                             <View style={{ flexGrow: 1, minHeight: 1 }}>
                                 <FlatList
-                                    data={videos}
+                                    data={galleryImages}
                                     horizontal
-                                    keyExtractor={(item, index) => (item.id ? item.id.toString() : index.toString())}
-                                    nestedScrollEnabled={true}
+                                    keyExtractor={(item, index) => index.toString()}
                                     contentContainerStyle={styles.fileContainer}
                                     renderItem={({ item, index }) => (
                                         <View style={styles.thumbnailBox} className="border border-gray-300">
-                                            <Image
-                                                source={{ uri: `${item.thumbnailImages}?update=${new Date().getTime()}` }}
-                                                style={styles.thumbnail}
-                                            />
-                                            <Text className="text-center font-rubik-bold">Video {index + 1}</Text>
-
+                                            <Image source={{ uri: item }} style={styles.thumbnail} />
+                                            <Text className="text-center font-rubik-bold">Image: {index + 1}</Text>
                                             <TouchableOpacity
-                                                onPress={() => setVideos(videos.filter((v) => v.id !== item.id))}
-                                                style={styles.deleteButton}
-                                            >
+                                                onPress={() => removeGalleryImage(index, item)}
+                                                style={styles.deleteButton}>
                                                 <Text className="text-white">X</Text>
                                             </TouchableOpacity>
                                         </View>
                                     )}
                                 />
                             </View>
+                            <TouchableOpacity onPress={pickGalleryImages} style={styles.dropbox}>
+                                <Text style={{ textAlign: 'center' }}>Pick images from gallery</Text>
+                            </TouchableOpacity>
+                        </View>
 
+                        {/* Upload Video */}
+                        <View style={styles.stepContent}>
+                            <Text style={styles.label}>Upload Videos</Text>
+                            <View style={{ flexGrow: 1, minHeight: 1 }}>
+                                <FlatList
+                                    data={videos}
+                                    horizontal
+                                    keyExtractor={(item, index) => index.toString()}
+                                    contentContainerStyle={styles.fileContainer}
+                                    renderItem={({ item, index }) => (
+                                        <View style={styles.thumbnailBox} className="border border-gray-300">
+                                            <Image source={{ uri: `${item.thumbnailImages}?update=${new Date().getTime()}` }} style={styles.thumbnail} />
+                                            <Text className="text-center font-rubik-bold">Video {index + 1}</Text>
+                                            <TouchableOpacity
+                                                onPress={() => removeVideo(index, item.uri)}
+                                                style={styles.deleteButton}
+                                            >
+                                                <Text className="text-white">X</Text>
+                                            </TouchableOpacity>
+
+                                        </View>
+                                    )}
+                                />
+                            </View>
                             <TouchableOpacity onPress={pickVideo} style={styles.dropbox}>
                                 <Text style={{ textAlign: 'center' }}>Pick videos from gallery</Text>
                             </TouchableOpacity>
-
                         </View>
 
-                        {/* upload doc */}
+                        {/* Upload Property Documents */}
                         <View style={styles.stepContent}>
                             <Text style={styles.label}>Upload Property Documents</Text>
                             <View style={{ flexGrow: 1, minHeight: 1 }}>
                                 <FlatList
                                     data={propertyDocuments}
                                     horizontal
-                                    nestedScrollEnabled={true}
-                                    keyExtractor={(_, index) => index.toString()}
+                                    keyExtractor={(item, index) => index.toString()}
                                     contentContainerStyle={styles.fileContainer}
                                     renderItem={({ item, index }) => (
                                         <View style={styles.thumbnailBox} className="border border-gray-300">
                                             <Image source={{ uri: item.thumbnail }} style={styles.thumbnail} />
                                             <Text className="text-center font-rubik-bold">Doc {index + 1}</Text>
-
-                                            <TouchableOpacity onPress={() => removeDocument(index)} style={styles.deleteButton}>
+                                            <TouchableOpacity
+                                                onPress={() => removeDocument(index, item.uri)}  // Pass the correct URI
+                                                style={styles.deleteButton}>
                                                 <Text className="text-white">X</Text>
                                             </TouchableOpacity>
+
                                         </View>
                                     )}
                                 />
@@ -1083,24 +1265,25 @@ const Editproperty = () => {
                             </TouchableOpacity>
                         </View>
 
-                        {/* upload marster plan */}
+                        {/* Upload Master Plan */}
                         <View style={styles.stepContent}>
                             <Text style={styles.label}>Upload Master Plan of Property</Text>
                             <View style={{ flexGrow: 1, minHeight: 1 }}>
                                 <FlatList
                                     data={masterPlanDoc}
                                     horizontal
-                                    nestedScrollEnabled={true}
-                                    keyExtractor={(_, index) => index.toString()}
+                                    keyExtractor={(item, index) => index.toString()}
                                     contentContainerStyle={styles.fileContainer}
                                     renderItem={({ item, index }) => (
                                         <View style={styles.thumbnailBox} className="border border-gray-300">
                                             <Image source={{ uri: item.thumbnail }} style={styles.thumbnail} />
                                             <Text className="text-center font-rubik-bold">Plan {index + 1}</Text>
-
-                                            <TouchableOpacity onPress={() => removeMasterPlan(index)} style={styles.deleteButton}>
+                                            <TouchableOpacity
+                                                onPress={() => removeMasterPlan(index, item.uri)}  // Pass the correct URI
+                                                style={styles.deleteButton}>
                                                 <Text className="text-white">X</Text>
                                             </TouchableOpacity>
+
                                         </View>
                                     )}
                                 />
@@ -1110,6 +1293,7 @@ const Editproperty = () => {
                             </TouchableOpacity>
                         </View>
                     </ProgressStep>
+
                 </ProgressSteps>
             </View>
             {loading && (
@@ -1168,21 +1352,25 @@ const styles = StyleSheet.create({
         marginTop: 10
     },
     amenityItem: {
-        flexDirection: 'row',
-        justifyContent: 'start',
-        padding: 5,
+        flexDirection: 'row',  // Ensure row layout
+        alignItems: 'center',  // Align items properly
+        paddingHorizontal: 10,
+        paddingVertical: 5,
         borderRadius: 50,
         marginRight: 5,
-        borderColor: 'green',
+        marginBottom: 5,
         backgroundColor: '#edf5ff',
+        borderColor: 'green',
         borderWidth: 1,
     },
+
+
     removeBtn: {
         color: 'red',
         fontWeight: 'bold',
         fontSize: 12,
         marginEnd: 5,
-        marginTop: 3,
+        marginTop: 0,
 
     },
     addBtn: {

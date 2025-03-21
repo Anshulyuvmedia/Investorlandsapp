@@ -1,4 +1,4 @@
-import { Image, StyleSheet, Text, TouchableOpacity, View, TextInput, KeyboardAvoidingView, FlatList, Alert, Platform, ScrollView, Button, ActivityIndicator } from 'react-native';
+import { Image, StyleSheet, Text, TouchableOpacity, View, TextInput, FlatList, Platform, ScrollView, ActivityIndicator } from 'react-native';
 import React, { useState } from 'react';
 import { SafeAreaView } from 'react-native-safe-area-context';
 import icons from '@/constants/icons';
@@ -14,6 +14,7 @@ import { GooglePlacesAutocomplete } from "react-native-google-places-autocomplet
 import Constants from "expo-constants";
 import 'react-native-get-random-values';
 import DateTimePicker from '@react-native-community/datetimepicker';
+import Toast, { BaseToast } from 'react-native-toast-message';
 
 const Addproperty = () => {
 
@@ -28,7 +29,7 @@ const Addproperty = () => {
 
     const [errors, setErrors] = useState(false);
     const [selectedCategory, setSelectedCategory] = useState(null);
-    const [selectedStatus, setSelectedStatus] = useState("unpublished");
+    // const [selectedStatus, setSelectedStatus] = useState("unpublished");
     const [mainImage, setMainImage] = useState(null);
 
     const [videos, setVideos] = useState([]);
@@ -73,10 +74,38 @@ const Addproperty = () => {
         { label: 'Luxury House', value: 'Luxury House' },
         { label: 'Bunglow', value: 'Bunglow' },
     ];
-    const status = [
-        { label: 'Unpublished', value: 'unpublished' },
-        { label: 'Published', value: 'published' },
-    ];
+    const toastConfig = {
+        success: (props) => (
+            <BaseToast
+                {...props}
+                style={{ borderLeftColor: "green" }}
+                text1Style={{
+                    fontSize: 16,
+                    fontWeight: "bold",
+                }}
+                text2Style={{
+                    fontSize: 14,
+                }}
+            />
+        ),
+        error: (props) => (
+            <BaseToast
+                {...props}
+                style={{ borderLeftColor: "red" }}
+                text1Style={{
+                    fontSize: 16,
+                    fontWeight: "bold",
+                }}
+                text2Style={{
+                    fontSize: 14,
+                }}
+            />
+        ),
+    };
+    // const status = [
+    //     { label: 'Unpublished', value: 'unpublished' },
+    //     { label: 'Published', value: 'published' },
+    // ];
 
     const validateStep = (step) => {
         if (step === 1) {
@@ -91,7 +120,11 @@ const Addproperty = () => {
     const onNextStep = (step) => {
         if (!validateStep(step)) {
             setErrors(true);
-            Alert.alert("Validation Error", "Please fill all required fields.");
+            Toast.show({
+                type: 'error',
+                text1: 'Validation Error',
+                text2: "Please fill all required fields.",
+            });
         } else {
             setErrors(false);
         }
@@ -100,7 +133,11 @@ const Addproperty = () => {
     const requestPermissions = async () => {
         const { status } = await ImagePicker.requestMediaLibraryPermissionsAsync();
         if (status !== 'granted') {
-            alert('Sorry, we need camera roll permissions to make this work!');
+            Toast.show({
+                type: 'error',
+                text1: 'Error',
+                text2: "Sorry, we need camera roll permissions to make this work!",
+            });
             return false;
         }
         return true;
@@ -320,7 +357,11 @@ const Addproperty = () => {
             };
         } catch (error) {
             console.error("Error fetching user data:", error);
-            Alert.alert("Error", "Could not retrieve user data.");
+            Toast.show({
+                type: 'error',
+                text1: 'Error',
+                text2: "Could not retrieve user data.",
+            });
             return null;
         }
     };
@@ -346,7 +387,7 @@ const Addproperty = () => {
             // ✅ Append additional fields
             formData.append("bedroom", step3Data?.bedroom ?? "");
             formData.append("category", selectedCategory ?? "");
-            formData.append("status", selectedStatus ?? "");
+            // formData.append("status", selectedStatus ?? "");
             formData.append("roleid", id ?? "");
             formData.append("usertype", user_type ?? "");
             formData.append("amenities", JSON.stringify(amenities));
@@ -455,13 +496,26 @@ const Addproperty = () => {
 
             // console.log("API Response:", response.data);
             if (response.status === 200 && !response.data.error) {
-                Alert.alert("Success", "Property added successfully!", [{ text: "OK" }]);
+                Toast.show({
+                    type: 'error',
+                    text1: 'Success',
+                    text2: "Property added successfully!",
+                });
             } else {
-                Alert.alert("Error", response.data.message || "Failed to add property.");
+                console.error("Error", response.data.message || "Failed to add property.");
+                Toast.show({
+                    type: 'error',
+                    text1: 'Error',
+                    text2: "Failed to add property.",
+                });
             }
         } catch (error) {
             console.error("API Error:", error?.response?.data || error);
-            Alert.alert("Error", "Something went wrong. Please try again.");
+            Toast.show({
+                type: 'error',
+                text1: 'Error',
+                text2: "Something went wrong. Please try again.",
+            });
         } finally {
             setLoading(false);
         }
@@ -490,7 +544,7 @@ const Addproperty = () => {
         setStep2Data({ historydate: [] });
 
         setSelectedCategory(null);
-        setSelectedStatus("unpublished");
+        // setSelectedStatus("unpublished");
         setMainImage(null);
         setGalleryImages([]);
         setPropertyDocuments([]);
@@ -500,6 +554,8 @@ const Addproperty = () => {
 
     return (
         <SafeAreaView style={{ backgroundColor: 'white', height: '100%', paddingHorizontal: 20 }}>
+            <Toast config={toastConfig} position="top" />
+
             <View style={{ flexDirection: 'row', alignItems: 'center', justifyContent: 'space-between' }}>
                 <TouchableOpacity onPress={() => router.back()} style={{ flexDirection: 'row', backgroundColor: '#E0E0E0', borderRadius: 50, width: 44, height: 44, alignItems: 'center', justifyContent: 'center' }}>
                     <Image source={icons.backArrow} style={{ width: 20, height: 20 }} />
@@ -774,7 +830,7 @@ const Addproperty = () => {
                                 debounce={400} // Reduce API calls
                             />
 
-                            <View style={{ backgroundColor: '#edf5ff', padding:5, borderRadius:10 }}>
+                            <View style={{ backgroundColor: '#edf5ff', padding: 5, borderRadius: 10 }}>
                                 <Text style={styles.label}>Location: {fullAddress}</Text>
                             </View>
 
@@ -796,7 +852,7 @@ const Addproperty = () => {
                         previousBtnTextStyle={buttonPreviousTextStyle}
                         onSubmit={handleSubmit}>
                         {/* select status */}
-                        <View style={styles.stepContent}>
+                        {/* <View style={styles.stepContent}>
                             <Text style={styles.label}>Select Status</Text>
                             <View style={styles.pickerContainer}>
                                 <RNPickerSelect
@@ -807,7 +863,7 @@ const Addproperty = () => {
                                     placeholder={{ label: 'Choose an option...', value: null }}
                                 />
                             </View>
-                        </View>
+                        </View> */}
 
                         {/* upload gallery */}
                         <Text style={styles.label}>Property Gallery</Text>

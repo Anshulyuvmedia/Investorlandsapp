@@ -1,4 +1,4 @@
-import { FlatList, Image, ScrollView, Alert, Text, TouchableOpacity, View, Dimensions, Platform, ActivityIndicator, Share } from "react-native";
+import { FlatList, Image, ScrollView, Text, TouchableOpacity, View, Dimensions, Platform, ActivityIndicator, Share } from "react-native";
 import { router, useLocalSearchParams } from "expo-router";
 import icons from "@/constants/icons";
 import images from "@/constants/images";
@@ -14,6 +14,7 @@ import MasterPlanList from "@/components/MasterPlanList";
 import PriceHistoryChart from "@/components/PriceHistoryChart";
 import MortgageCalculator from "@/components/MortgageCalculator";
 import * as Linking from 'expo-linking';
+import Toast, { BaseToast } from 'react-native-toast-message';
 
 const PropertyDetails = () => {
     const propertyId = useLocalSearchParams().id;
@@ -44,7 +45,34 @@ const PropertyDetails = () => {
         longitudeDelta: 0.0121,
     });
     const navigation = useNavigation();
-
+    const toastConfig = {
+        success: (props) => (
+            <BaseToast
+                {...props}
+                style={{ borderLeftColor: "green" }}
+                text1Style={{
+                    fontSize: 16,
+                    fontWeight: "bold",
+                }}
+                text2Style={{
+                    fontSize: 14,
+                }}
+            />
+        ),
+        error: (props) => (
+            <BaseToast
+                {...props}
+                style={{ borderLeftColor: "red" }}
+                text1Style={{
+                    fontSize: 16,
+                    fontWeight: "bold",
+                }}
+                text2Style={{
+                    fontSize: 14,
+                }}
+            />
+        ),
+    };
     const openPdf = (pdfUrl) => {
         Linking.openURL(pdfUrl);
     };
@@ -62,7 +90,11 @@ const PropertyDetails = () => {
                 if (supported) {
                     Linking.openURL(url);
                 } else {
-                    Alert.alert("WhatsApp is not installed");
+                    Toast.show({
+                        type: 'error',
+                        text1: 'Error',
+                        text2: "WhatsApp is not installed",
+                    });
                 }
             })
             .catch((err) => console.error("An error occurred", err));
@@ -94,13 +126,25 @@ const PropertyDetails = () => {
             const response = await axios.post("https://investorlands.com/api/sendenquiry", enquiryData);
 
             if (response.status === 200 && !response.data.error) {
-                alert("Enquiry submitted successfully!");
+                Toast.show({
+                    type: 'success',
+                    text1: 'Success',
+                    text2: "Enquiry submitted successfully!",
+                });
             } else {
-                alert("Failed to submit enquiry. Please try again.");
+                Toast.show({
+                    type: 'error',
+                    text1: 'Error',
+                    text2: "Failed to submit enquiry. Please try again.",
+                });
             }
         } catch (error) {
             console.error("Error submitting enquiry:", error);
-            alert("An error occurred. Please try again.");
+            Toast.show({
+                type: 'error',
+                text1: 'Error',
+                text2: "An error occurred. Please try again.",
+            });
         } finally {
             setLoading(false); // Hide loading indicator
         }
@@ -290,6 +334,8 @@ const PropertyDetails = () => {
                 showsVerticalScrollIndicator={false}
                 contentContainerClassName="pb-32 bg-white"
                 contentContainerStyle={{ paddingBottom: 32, backgroundColor: 'white' }}>
+                <Toast config={toastConfig} position="top" />
+
                 <View className="relative w-full" style={{ height: windowHeight / 2 }}>
                     <Image
                         source={{ uri: propertyThumbnail }}

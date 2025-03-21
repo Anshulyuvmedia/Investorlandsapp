@@ -6,7 +6,6 @@ import {
   ScrollView,
   Image,
   TouchableOpacity,
-  Alert,
   ActivityIndicator,
   TextInput,
 } from 'react-native';
@@ -18,9 +17,8 @@ import images from '@/constants/images';
 import icons from '@/constants/icons';
 import * as WebBrowser from "expo-web-browser";
 import * as Google from 'expo-auth-session/providers/google';
-import * as AuthSession from 'expo-auth-session';
 import Constants from "expo-constants";
-import * as SecureStore from 'expo-secure-store';
+import Toast, { BaseToast } from 'react-native-toast-message';
 
 WebBrowser.maybeCompleteAuthSession();
 
@@ -33,7 +31,34 @@ const Signin = () => {
   const ANDROID_CLIENT_ID = Constants.expoConfig.extra.ANDROID_CLIENT_ID;
   const WEB_CLIENT_ID = Constants.expoConfig.extra.WEB_CLIENT_ID;
   const IOS_CLIENT_ID = Constants.expoConfig.extra.IOS_CLIENT_ID;
-
+  const toastConfig = {
+    success: (props) => (
+      <BaseToast
+        {...props}
+        style={{ borderLeftColor: "green" }}
+        text1Style={{
+          fontSize: 16,
+          fontWeight: "bold",
+        }}
+        text2Style={{
+          fontSize: 14,
+        }}
+      />
+    ),
+    error: (props) => (
+      <BaseToast
+        {...props}
+        style={{ borderLeftColor: "red" }}
+        text1Style={{
+          fontSize: 16,
+          fontWeight: "bold",
+        }}
+        text2Style={{
+          fontSize: 14,
+        }}
+      />
+    ),
+  };
   const config = {
     androidClientId: ANDROID_CLIENT_ID,
     iosClientId: IOS_CLIENT_ID,
@@ -45,7 +70,11 @@ const Signin = () => {
   // Handle Email Login
   const emaillogin = async () => {
     if (!email || !password) {
-      Alert.alert('Validation Error', 'Please enter both email and password.');
+      Toast.show({
+        type: 'error',
+        text1: 'Validation Error',
+        text2: "Please enter both email and password.",
+      });
       return;
     }
 
@@ -65,11 +94,20 @@ const Signin = () => {
 
         router.push('/'); // Redirect to dashboard
       } else {
-        Alert.alert('Login Failed', data.message || 'Invalid credentials');
+        console.error('Login Failed', data.message || 'Invalid credentials');
+        Toast.show({
+          type: 'error',
+          text1: 'Login Failed',
+          text2: "Invalid credentials",
+      });
       }
     } catch (error) {
       console.error('Login Error:', error);
-      Alert.alert('Error', 'An unexpected error occurred');
+      Toast.show({
+        type: 'error',
+        text1: 'Error',
+        text2: "An unexpected error occurred",
+    });
     } finally {
       setLoading(false);
     }
@@ -124,6 +162,8 @@ const Signin = () => {
   return (
     <SafeAreaView style={styles.container}>
       <ScrollView contentContainerStyle={styles.scrollContainer}>
+        <Toast config={toastConfig} position="top" />
+
         <Image source={images.appfavicon} style={styles.logo} resizeMode="contain" />
 
         <View style={styles.formContainer}>

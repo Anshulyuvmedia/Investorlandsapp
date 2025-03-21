@@ -90,7 +90,7 @@ const Myproperties = () => {
                 <View className="ml-4 flex-1">
                   <View className="flex-row justify-between mt-2">
                     <Text className="text-md font-rubik text-gray-900">{item.property_name}</Text>
-                    <Text className={`inline-flex items-center rounded-md capitalize px-2 py-1 text-xs font-rubik border  ${item.status === 'published' ? ' bg-green-50  text-green-700  border-green-500 ' : 'bg-red-50  text-red-700 border-red-600/20'}`}>{item.status}</Text>
+                    <Text className={`inline-flex items-center rounded-md capitalize px-2 py-1 text-xs font-rubik border  ${item.status === 'published' ? ' bg-green-50  text-green-700  border-green-500 ' : 'bg-red-50  text-red-700 border-red-600/20'}`}>{item.status === 'published' ? 'Published' : 'Under Review'}</Text>
                   </View>
                   <Text className="text-sm font-semibold text-gray-700">{item.address}</Text>
                   <Text className="text-sm text-gray-500 mt-1">{item.city}</Text>
