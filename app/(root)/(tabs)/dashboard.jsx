@@ -67,6 +67,15 @@ const Dashboard = () => {
     }
   };
 
+  const links = [
+    { path: '/privacypolicy', label: 'Privacy Policy' },
+    { path: '/termsandconditions', label: 'Terms and Conditions' },
+    { path: '/userandagentagreement', label: 'User and Agent Agreement' },
+    { path: '/cookiespolicy', label: 'Cookies Policy' },
+    { path: '/contentandlistingguidelines', label: 'Content and Listing Guidelines' },
+    { path: '/dataretentionanddeletionpolicy', label: 'Data Retention and Deletion Policy' },
+  ];
+
   return (
     <SafeAreaView>
       <ScrollView showsVerticalScrollIndicator={false} contentContainerClassName="pb-32 px-7">
@@ -122,6 +131,18 @@ const Dashboard = () => {
                 <Image source={icons.logout} className="size-6" />
                 <Text className="text-lg font-rubik-medium text-danger ml-3">Logout</Text>
               </TouchableOpacity>
+            </View>
+
+            <View className="flex flex-col mt-10 border-t border-primary-200 pt-5">
+              {links.map(({ path, label }, index) => (
+                <TouchableOpacity
+                  key={index}
+                  onPress={() => router.push(path)}
+                  className="flex flex-row items-center py-3"
+                >
+                  <Text className="text-sm font-rubik text-gray-500 ml-3">{label}</Text>
+                </TouchableOpacity>
+              ))}
             </View>
           </View>
         )}

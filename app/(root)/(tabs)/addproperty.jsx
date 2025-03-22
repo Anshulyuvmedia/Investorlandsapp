@@ -109,26 +109,97 @@ const Addproperty = () => {
 
     const validateStep = (step) => {
         if (step === 1) {
-            return step1Data?.property_name && step1Data?.description && step1Data?.nearbylocation;
+            if (!step1Data?.property_name || !step1Data?.description || !step1Data?.nearbylocation) {
+                Toast.show({
+                    type: 'error',
+                    text1: 'Step 1 Error',
+                    text2: 'Property Name, Description, and Nearby Location are required.',
+                });
+                return false;
+            }
         }
+
         if (step === 2) {
-            return step3Data?.sqfoot && step3Data?.bathroom && step3Data?.floor && step3Data?.city;
+            if (!step2Data?.approxrentalincome || step2Data?.historydate.length === 0 || !step2Data?.price) {
+                Toast.show({
+                    type: 'error',
+                    text1: 'Step 2 Error',
+                    text2: 'Approx Rental Income, Price, and at least one History Date are required.',
+                });
+                return false;
+            }
         }
+
+        if (step === 3) {
+            if (!step3Data?.sqfoot || !step3Data?.bathroom || !step3Data?.floor || !step3Data?.city || !step3Data?.officeaddress || !step3Data?.bedroom) {
+                Toast.show({
+                    type: 'error',
+                    text1: 'Step 3 Error',
+                    text2: 'Square Foot, Bathroom, Floor, City, Office Address, and Bedroom are required.',
+                });
+                return false;
+            }
+        }
+
+        if (step === 4) {
+            if (!selectedCategory) {
+                Toast.show({
+                    type: 'error',
+                    text1: 'Category Required',
+                    text2: 'Please select a property category.',
+                });
+                return false;
+            }
+
+            if (!mainImage) {
+                Toast.show({
+                    type: 'error',
+                    text1: 'Image Required',
+                    text2: 'Please upload a main property image.',
+                });
+                return false;
+            }
+
+            if (galleryImages.length < 2) {
+                Toast.show({
+                    type: 'error',
+                    text1: 'Gallery Images Required',
+                    text2: 'Please upload at least 2 gallery images.',
+                });
+                return false;
+            }
+
+            if (!coordinates.latitude || !coordinates.longitude) {
+                Toast.show({
+                    type: 'error',
+                    text1: 'Location Required',
+                    text2: 'Please provide a valid property location.',
+                });
+                return false;
+            }
+
+            if (propertyDocuments.length === 0) {
+                Toast.show({
+                    type: 'error',
+                    text1: 'Documents Required',
+                    text2: 'Please upload at least one property document.',
+                });
+                return false;
+            }
+        }
+
         return true;
     };
+
 
     const onNextStep = (step) => {
         if (!validateStep(step)) {
             setErrors(true);
-            Toast.show({
-                type: 'error',
-                text1: 'Validation Error',
-                text2: "Please fill all required fields.",
-            });
         } else {
             setErrors(false);
         }
     };
+
 
     const requestPermissions = async () => {
         const { status } = await ImagePicker.requestMediaLibraryPermissionsAsync();
@@ -497,7 +568,7 @@ const Addproperty = () => {
             // console.log("API Response:", response.data);
             if (response.status === 200 && !response.data.error) {
                 Toast.show({
-                    type: 'error',
+                    type: 'success',
                     text1: 'Success',
                     text2: "Property added successfully!",
                 });
@@ -554,7 +625,7 @@ const Addproperty = () => {
 
     return (
         <SafeAreaView style={{ backgroundColor: 'white', height: '100%', paddingHorizontal: 20 }}>
-            <Toast config={toastConfig} position="top" />
+
 
             <View style={{ flexDirection: 'row', alignItems: 'center', justifyContent: 'space-between' }}>
                 <TouchableOpacity onPress={() => router.back()} style={{ flexDirection: 'row', backgroundColor: '#E0E0E0', borderRadius: 50, width: 44, height: 44, alignItems: 'center', justifyContent: 'center' }}>
@@ -569,13 +640,16 @@ const Addproperty = () => {
             </View>
 
             <View style={styles.container}>
+                <View style={{ position: 'absolute', top: 10, left: 0, right: 0, zIndex: 9999 }}>
+                    <Toast config={toastConfig} position="top" />
+                </View>
                 <ProgressSteps>
                     <ProgressStep label="General"
                         nextBtnTextStyle={buttonNextTextStyle}
-                    // onNext={() => onNextStep(1)}
-                    // errors={errors}
+                        onNext={() => onNextStep(1)}
+                        errors={errors}
                     >
-                        <View style={styles.stepContent}>
+                        <View style={styles.stepContent} >
 
                             {/* enter property name */}
                             <Text style={styles.label}>Property Name</Text>
@@ -634,8 +708,8 @@ const Addproperty = () => {
                     <ProgressStep label="Price"
                         nextBtnTextStyle={buttonNextTextStyle}
                         previousBtnTextStyle={buttonPreviousTextStyle}
-                    // onNext={() => onNextStep(2)}
-                    // errors={errors}
+                        onNext={() => onNextStep(2)}
+                        errors={errors}
                     >
                         <View>
                             <Text style={{ textAlign: 'center', fontFamily: 'Rubik-Bold' }}>Pricing & Other Details</Text>
@@ -741,8 +815,8 @@ const Addproperty = () => {
                     <ProgressStep label="Details"
                         nextBtnTextStyle={buttonNextTextStyle}
                         previousBtnTextStyle={buttonPreviousTextStyle}
-                    // onNext={() => onNextStep(3)}
-                    // errors={errors}
+                        onNext={() => onNextStep(3)}
+                        errors={errors}
                     >
                         <View style={styles.stepContent}>
 

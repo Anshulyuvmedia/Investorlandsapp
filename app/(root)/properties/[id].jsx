@@ -76,28 +76,45 @@ const PropertyDetails = () => {
     const openPdf = (pdfUrl) => {
         Linking.openURL(pdfUrl);
     };
+
     const openWhatsApp = (phoneNumber) => {
+        if (!phoneNumber) {
+            Toast.show({
+                type: "error",
+                text1: "Error",
+                text2: "Invalid phone number.",
+            });
+            return;
+        }
+
+        const cleanedNumber = phoneNumber.replace(/\D/g, ""); // Remove non-numeric characters
         let url = "";
 
         if (Platform.OS === "android") {
-            url = `whatsapp://send?phone=${phoneNumber}`;
+            url = `whatsapp://send?phone=${cleanedNumber}`;
         } else {
-            url = `https://wa.me/${phoneNumber}`; // iOS uses wa.me
+            url = `whatsapp://send?phone=${cleanedNumber}`; // Works for both iOS & Android
         }
 
-        Linking.canOpenURL(url)
-            .then((supported) => {
-                if (supported) {
-                    Linking.openURL(url);
-                } else {
-                    Toast.show({
-                        type: 'error',
-                        text1: 'Error',
-                        text2: "WhatsApp is not installed",
-                    });
-                }
-            })
-            .catch((err) => console.error("An error occurred", err));
+        Linking.openURL(url).catch(() => {
+            Toast.show({
+                type: "error",
+                text1: "Error",
+                text2: "WhatsApp is not installed.",
+            });
+        });
+    };
+
+    const openDialer = (phoneNumber) => {
+        const url = `tel:${phoneNumber}`;
+
+        Linking.openURL(url).catch(() => {
+            Toast.show({
+                type: "error",
+                text1: "Error",
+                text2: "Unable to open the dialer.",
+            });
+        });
     };
 
 
@@ -451,10 +468,10 @@ const PropertyDetails = () => {
                         </View>
 
                         <View className="flex flex-row items-center gap-3">
-                            <TouchableOpacity onPress={() => openWhatsApp("919876543210")}>
+                            <TouchableOpacity onPress={() => openWhatsApp("917711930093")}>
                                 <Image source={icons.chat} className="size-7" />
                             </TouchableOpacity>
-                            <TouchableOpacity>
+                            <TouchableOpacity onPress={() => openDialer("917711930093")}>
                                 <Image source={icons.phone} className="size-7" />
                             </TouchableOpacity>
                         </View>
